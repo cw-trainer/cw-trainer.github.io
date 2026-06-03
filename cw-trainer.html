@@ -720,7 +720,26 @@ function pickFive(chars, mode) {
     for (let i = 0; i < 5; i++) out.push(chars[i % chars.length]);
     return out;
   }
-  return Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]);
+  // Pool has enough unique chars: pick 5 without replacement
+  if (chars.length >= 5) {
+    const pool = [...chars];
+    const out = [];
+    while (out.length < 5) {
+      const idx = Math.floor(Math.random() * pool.length);
+      out.push(pool.splice(idx, 1)[0]);
+    }
+    return out;
+  }
+  // Fewer than 5 chars: fill with shuffled repeats, no two adjacent the same
+  const out = [];
+  let last = null;
+  for (let i = 0; i < 5; i++) {
+    const available = chars.filter(c => c !== last);
+    const pick = available[Math.floor(Math.random() * available.length)];
+    out.push(pick);
+    last = pick;
+  }
+  return out;
 }
 
 function buildSession() {
