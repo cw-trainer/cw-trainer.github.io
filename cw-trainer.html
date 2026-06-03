@@ -413,12 +413,146 @@
     font-family: var(--font-mono);
   }
 
-  /* ── Responsive ── */
+  /* ── Round Progress card — compact ── */
+  .info-card.progress-card {
+    flex: 0 0 auto;
+    min-width: 0;
+    width: auto;
+    padding: 8px 14px;
+  }
+  .info-card.progress-card h3 { margin-bottom: 4px; }
+  .progress-card-inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .progress-num {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .progress-bar {
+    height: 3px;
+    background: var(--surface3);
+    border-radius: 2px;
+    overflow: hidden;
+    width: 80px;
+  }
+
+  /* ══════════════════════════════════════
+     RESPONSIVE — tablet  (≤ 768 px)
+  ══════════════════════════════════════ */
+  @media (max-width: 768px) {
+    .app { padding: 0 12px; }
+
+    .header { padding: 14px 0 10px; }
+    .logo { font-size: 18px; }
+
+    .controls-bar { gap: 10px; padding: 10px 0; }
+    .ctrl-group { min-width: 110px; }
+    input[type="range"] { width: 80px; }
+    .ctrl-val { font-size: 13px; min-width: 46px; }
+
+    .week-nav { gap: 5px; padding: 10px 0; }
+    .week-btn { font-size: 11px; padding: 5px 8px; }
+
+    .session-info { gap: 12px; padding: 10px 0; }
+    .info-card { padding: 10px 12px; min-width: 140px; }
+
+    .el-box { width: 62px; height: 62px; }
+    .el-char { font-size: 24px; }
+    .el-morse { font-size: 9px; }
+
+    .char-display { font-size: 80px; min-height: 96px; }
+    .morse-display { font-size: 20px; }
+
+    .arena { gap: 14px; padding: 14px 0; }
+
+    .mix-panel { padding: 12px; }
+    .complete-card { padding: 24px 20px; }
+  }
+
+  /* ══════════════════════════════════════
+     RESPONSIVE — mobile  (≤ 480 px)
+  ══════════════════════════════════════ */
   @media (max-width: 480px) {
-    .char-display { font-size: 72px; min-height: 88px; }
-    .el-box { width: 58px; height: 58px; }
-    .el-char { font-size: 22px; }
-    .ctrl-group { min-width: 120px; }
+    .app { padding: 0 10px; }
+
+    /* Header stacks logo above buttons */
+    .header { flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px 0 8px; }
+    .logo { font-size: 16px; letter-spacing: 2px; }
+    .btn-row { width: 100%; }
+    .btn-row .btn { flex: 1; text-align: center; font-size: 13px; padding: 6px 10px; }
+
+    /* Controls: 2-column grid */
+    .controls-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px 0; }
+    .ctrl-group { min-width: 0; }
+    .ctrl-label { font-size: 10px; }
+    input[type="range"] { width: 100%; max-width: 90px; }
+    .ctrl-val { font-size: 12px; min-width: 40px; }
+
+    /* Week nav: scrollable single row */
+    .week-nav {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding: 8px 0;
+      gap: 5px;
+    }
+    .week-nav::-webkit-scrollbar { display: none; }
+    .week-btn { font-size: 11px; padding: 5px 8px; white-space: nowrap; flex-shrink: 0; }
+
+    /* Session info: full-width stack */
+    .session-info { flex-direction: column; gap: 8px; padding: 8px 0; }
+    .info-card { min-width: 0; width: 100%; }
+    .info-card.progress-card { width: 100%; }
+    .progress-bar { width: 120px; }
+
+    /* Element grid: fixed 5-across layout */
+    .element-grid { gap: 6px; max-width: 100%; }
+    .el-box { width: calc(20vw - 10px); max-width: 58px; height: calc(20vw - 10px); max-height: 58px; border-radius: 6px; }
+    .el-char { font-size: clamp(16px, 4vw, 22px); }
+    .el-morse { font-size: 8px; letter-spacing: 1px; }
+
+    /* Big display */
+    .char-display { font-size: clamp(56px, 18vw, 80px); min-height: 72px; }
+    .morse-display { font-size: clamp(16px, 5vw, 22px); letter-spacing: 4px; }
+
+    /* Arena tighter */
+    .arena { gap: 10px; padding: 10px 0; }
+    .round-dot { width: 8px; height: 8px; }
+
+    /* Mix panel */
+    .mix-panel { padding: 10px; }
+    .mix-week-row { gap: 6px; }
+    .mix-check { font-size: 12px; }
+
+    /* Action buttons full width */
+    .action-row { width: 100%; }
+    .action-row .btn { flex: 1; }
+
+    /* Complete card */
+    .complete-card { padding: 20px 14px; }
+    .score-big { font-size: 36px; }
+    .complete-btn-row { flex-direction: column; }
+    .complete-btn-row .btn { width: 100%; text-align: center; }
+
+    /* Status / hint */
+    .status-msg { font-size: 12px; }
+    .idle-hint { font-size: 11px; }
+    .round-label { font-size: 10px; }
+  }
+
+  /* ══════════════════════════════════════
+     RESPONSIVE — very small  (≤ 360 px)
+  ══════════════════════════════════════ */
+  @media (max-width: 360px) {
+    .el-box { width: calc(19vw - 6px); height: calc(19vw - 6px); }
+    .el-char { font-size: 15px; }
+    .el-morse { display: none; }
+    .char-display { font-size: 52px; }
   }
 </style>
 </head>
@@ -699,21 +833,25 @@ function renderMain() {
   ic1.appendChild(pills);
   si.appendChild(ic1);
 
-  // Progress card
+  // Progress card — compact
   const ic2 = document.createElement('div');
-  ic2.className = 'info-card';
-  ic2.style.maxWidth = '200px';
+  ic2.className = 'info-card progress-card';
   const done = Math.min(currentRound, 5);
-  ic2.innerHTML = '<h3>Round progress</h3>' +
-    '<div style="font-size:24px;font-family:var(--font-mono);color:var(--accent);margin-bottom:8px">' +
-    (currentRound >= 5 ? '✓' : (done + 1)) + '/5</div>';
+  ic2.innerHTML = '<h3>Round progress</h3>';
+  const pci = document.createElement('div');
+  pci.className = 'progress-card-inner';
+  const pnum = document.createElement('span');
+  pnum.className = 'progress-num';
+  pnum.textContent = (currentRound >= 5 ? '✓' : (done + 1)) + '/5';
   const pb = document.createElement('div');
   pb.className = 'progress-bar';
   const pf = document.createElement('div');
   pf.className = 'progress-fill';
   pf.style.width = Math.min(currentRound / 5 * 100, 100) + '%';
   pb.appendChild(pf);
-  ic2.appendChild(pb);
+  pci.appendChild(pnum);
+  pci.appendChild(pb);
+  ic2.appendChild(pci);
   si.appendChild(ic2);
   el.appendChild(si);
 
