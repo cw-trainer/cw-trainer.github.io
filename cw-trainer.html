@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CW Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0e0f;
+    --surface: #111618;
+    --surface2: #192022;
+    --surface3: #1f2729;
+    --border: #2a3438;
+    --accent: #00d4aa;
+    --accent2: #00a882;
+    --accent3: #007d61;
+    --text: #e8f0ee;
+    --muted: #6b8880;
+    --dim: #3a4d48;
+    --danger: #ff6b6b;
+    --warn: #ffb347;
+    --success: #00d4aa;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-ui: 'Rajdhani', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ── Layout ── */
+  .app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 16px;
+  }
+
+  /* ── Header ── */
+  .header {
+    padding: 20px 0 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .logo {
+    font-family: var(--font-mono);
+    font-size: 22px;
+    color: var(--accent);
+    letter-spacing: 3px;
+  }
+  .logo span { color: var(--muted); }
+
+  /* ── Controls bar ── */
+  .controls-bar {
+    display: flex;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .ctrl-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 140px;
+  }
+  .ctrl-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+  .ctrl-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  input[type="range"] {
+    width: 100px;
+    height: 4px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+  }
+  .ctrl-val {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--accent);
+    min-width: 52px;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 500;
+    padding: 7px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color .15s, color .15s, background .15s;
+    letter-spacing: .5px;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary {
+    background: var(--accent);
+    color: #0a0e0f;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .btn.primary:hover { background: var(--accent2); border-color: var(--accent2); }
+  .btn:disabled { opacity: .35; cursor: default; pointer-events: none; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ── Week navigation ── */
+  .week-nav {
+    display: flex;
+    gap: 6px;
+    padding: 14px 0;
+    flex-wrap: wrap;
+  }
+  .week-btn {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted);
+    cursor: pointer;
+    transition: border-color .15s, color .15s, background .15s;
+    letter-spacing: 1px;
+  }
+  .week-btn:hover { border-color: var(--dim); color: var(--text); }
+  .week-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,212,170,.08);
+  }
+  .week-btn.mix { border-color: var(--warn); color: var(--warn); }
+  .week-btn.mix.active { background: rgba(255,179,71,.08); }
+
+  /* ── Session info strip ── */
+  .session-info {
+    padding: 14px 0;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .info-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    flex: 1;
+    min-width: 180px;
+  }
+  .info-card h3 {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .char-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .char-pill {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 8px;
+    color: var(--text);
+  }
+  .progress-bar {
+    height: 3px;
+    background: var(--surface3);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width .3s;
+  }
+
+  /* ── Arena ── */
+  .arena {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+    gap: 18px;
+  }
+
+  /* ── Round dots ── */
+  .round-indicator { display: flex; gap: 8px; }
+  .round-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid var(--dim);
+    background: transparent;
+    transition: background .2s, border-color .2s, box-shadow .2s;
+  }
+  .round-dot.done { background: var(--accent3); border-color: var(--accent3); }
+  .round-dot.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  /* ── Element grid ── */
+  .element-grid {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 500px;
+  }
+  .el-box {
+    width: 72px;
+    height: 72px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s, box-shadow .2s;
+    user-select: none;
+  }
+  .el-box:hover { border-color: var(--dim); }
+  .el-box.active {
+    border-color: var(--accent);
+    background: rgba(0,212,170,.08);
+    box-shadow: 0 0 16px rgba(0,212,170,.15);
+  }
+  .el-box.played {
+    border-color: var(--accent3);
+    background: rgba(0,125,97,.1);
+  }
+  .el-char {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    color: var(--text);
+    transition: color .1s;
+  }
+  .el-morse {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+  .el-box.active .el-char { color: var(--accent); }
+  .el-box.active .el-morse { color: var(--accent2); }
+
+  /* ── Big character display ── */
+  .char-display {
+    font-family: var(--font-mono);
+    font-size: 100px;
+    color: var(--accent);
+    text-align: center;
+    min-height: 120px;
+    line-height: 1;
+    text-shadow: 0 0 40px rgba(0,212,170,.3);
+    transition: color .1s, text-shadow .1s;
+  }
+  .char-display.flash {
+    color: #fff;
+    text-shadow: 0 0 60px rgba(0,212,170,.8);
+  }
+  .morse-display {
+    font-family: var(--font-mono);
+    font-size: 24px;
+    color: var(--muted);
+    letter-spacing: 6px;
+    text-align: center;
+    min-height: 32px;
+  }
+  .morse-sym { color: var(--accent); }
+
+  /* ── Status message ── */
+  .status-msg {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    min-height: 20px;
+  }
+  .status-msg.ok { color: var(--success); }
+  .status-msg.err { color: var(--danger); }
+
+  /* ── Action row ── */
+  .action-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ── Mix panel ── */
+  .mix-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    width: 100%;
+    max-width: 620px;
+  }
+  .mix-panel h3 {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+  .mix-week-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .mix-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .mix-check input { accent-color: var(--accent); cursor: pointer; }
+  .mix-chars { display: flex; gap: 4px; flex-wrap: wrap; }
+  .mix-char {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 2px 5px;
+    color: var(--muted);
+  }
+  .mix-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    font-family: var(--font-mono);
+  }
+
+  /* ── Complete card ── */
+  .complete-card {
+    background: var(--surface);
+    border: 1px solid var(--accent3);
+    border-radius: 12px;
+    padding: 32px;
+    text-align: center;
+    max-width: 420px;
+    width: 100%;
+  }
+  .complete-card h2 { font-size: 24px; color: var(--accent); margin-bottom: 8px; font-weight: 500; }
+  .complete-card p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+  .score-big {
+    font-family: var(--font-mono);
+    font-size: 48px;
+    color: var(--accent);
+    margin: 16px 0;
+  }
+  .complete-btn-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  /* ── Idle hint ── */
+  .idle-hint {
+    font-size: 13px;
+    color: var(--dim);
+    text-align: center;
+    font-family: var(--font-mono);
+  }
+
+  /* ── Round label ── */
+  .round-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-family: var(--font-mono);
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 480px) {
+    .char-display { font-size: 72px; min-height: 88px; }
+    .el-box { width: 58px; height: 58px; }
+    .el-char { font-size: 22px; }
+    .ctrl-group { min-width: 120px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <div class="logo">CW <span>·</span> TRAINER</div>
+    <div class="btn-row">
+      <button class="btn" id="playAllBtn" onclick="playAll()">▶ Play session</button>
+      <button class="btn" id="stopBtn" onclick="stopAll()" disabled>■ Stop</button>
+    </div>
+  </div>
+
+  <div class="controls-bar">
+    <div class="ctrl-group">
+      <div class="ctrl-label">Speed (WPM)</div>
+      <div class="ctrl-row">
+        <input type="range" id="wpmSlider" min="5" max="35" value="12" step="1" oninput="updateWPM(this.value)">
+        <span class="ctrl-val" id="wpmVal">12 wpm</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Pitch (Hz)</div>
+      <div class="ctrl-row">
+        <input type="range" id="pitchSlider" min="300" max="900" value="600" step="10" oninput="updatePitch(this.value)">
+        <span class="ctrl-val" id="pitchVal">600 Hz</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Volume</div>
+      <div class="ctrl-row">
+        <input type="range" id="volSlider" min="0" max="100" value="70" step="1" oninput="updateVol(this.value)">
+        <span class="ctrl-val" id="volVal">70%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="week-nav" id="weekNav"></div>
+  <div id="mainContent"></div>
+</div>
+
+<script>
+/* ─────────────────────────────────────────
+   MORSE TABLE
+───────────────────────────────────────── */
+const MORSE = {
+  'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---',
+  'K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-',
+  'U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..',
+  '0':'-----','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.',
+  '/':'-..-.','.':'.-.-.-',',':'--..--','?':'..--..','=':'-...-','+':'.-.-.'
+};
+
+/* ─────────────────────────────────────────
+   WEEK PLAN
+───────────────────────────────────────── */
+const WEEKS = [
+  // { label:'W1', chars:['E','T','A','N','I'], desc:'E T A N I' },
+  { label:'W1', chars:['E','I','S','H','5'], desc:'E I S H 5' },
+  // { label:'W2', chars:['S','O','R','H','D'], desc:'S O R H D' },
+  { label:'W2', chars:['T','M','O','A','U'], desc:'T M O A U' },
+  // { label:'W3', chars:['L','C','U','M','F'], desc:'L C U M F' },
+  { label:'W3', chars:['V','D','N','B','P'], desc:'V D N B P' },
+  // { label:'W4', chars:['G','P','W','Y','B'], desc:'G P W Y B' },
+  { label:'W4', chars:['G','Z','C','R'], desc:'G Z C R' },
+  // { label:'W5', chars:['V','K','J','X','Q','Z'], desc:'V K J X Q Z' },
+  { label:'W5', chars:['Y','L','F','Q'], desc:'Y L F Q' },
+  { label:'W6', chars:['X','J','K','R','3'], desc:'X J K R 3' },
+  // { label:'W6', chars:['1','2','3','4','5'], desc:'numbers 1–5' },
+  { label:'W7', chars:['1','2','3','4','5'], desc:'numbers 1–5' },
+  // { label:'W7', chars:['6','7','8','9','0'], desc:'numbers 6-0' },
+  { label:'W8', chars:['6','7','8','9','0'], desc:'numbers 6-0' },
+  // { label:'W8', chars:['/','.',',','?','='], desc:'symbols' },
+  { label:'W9', chars:['/','.',',','?','='], desc:'symbols' },
+  { label:'MIX', chars:[], desc:'Mix from selected weeks', mix:true },
+];
+
+/* ─────────────────────────────────────────
+   STATE
+───────────────────────────────────────── */
+let wpm         = 12;
+let pitch       = 600;
+let vol         = 0.7;
+let currentWeek = 0;
+let currentRound= 0;
+let roundSequence = [];
+let isPlaying   = false;
+let stopFlag    = false;
+let audioCtx    = null;
+let mixWeeks    = [0];
+
+/* ─────────────────────────────────────────
+   AUDIO
+───────────────────────────────────────── */
+function getDotMs() { return 60 / (wpm * 50) * 1000; }
+
+function getCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playTone(ms) {
+  return new Promise(resolve => {
+    const ctx   = getCtx();
+    const osc   = ctx.createOscillator();
+    const gain  = ctx.createGain();
+    const dur   = ms / 1000;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = pitch;
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + 0.005);
+    gain.gain.setValueAtTime(vol, ctx.currentTime + dur - 0.005);
+    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + dur);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + dur + 0.02);
+    osc.onended = resolve;
+  });
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function playChar(ch) {
+  const code = MORSE[ch.toUpperCase()];
+  if (!code) return;
+  const dot = getDotMs();
+  for (let i = 0; i < code.length; i++) {
+    if (stopFlag) return;
+    await playTone(code[i] === '.' ? dot : dot * 3);
+    if (i < code.length - 1) await sleep(dot);
+  }
+}
+
+/* ─────────────────────────────────────────
+   CONTROLS
+───────────────────────────────────────── */
+function updateWPM(v)   { wpm   = parseInt(v);   document.getElementById('wpmVal').textContent   = v + ' wpm'; }
+function updatePitch(v) { pitch = parseInt(v);   document.getElementById('pitchVal').textContent = v + ' Hz'; }
+function updateVol(v)   { vol   = parseInt(v)/100; document.getElementById('volVal').textContent  = v + '%'; }
+
+/* ─────────────────────────────────────────
+   SESSION LOGIC
+───────────────────────────────────────── */
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function getMixChars() {
+  let all = [];
+  mixWeeks.forEach(w => { all = [...new Set([...all, ...WEEKS[w].chars])]; });
+  return all.length ? all : WEEKS[0].chars;
+}
+
+function pickFive(chars, mode) {
+  if (!chars.length) chars = ['E'];
+  if (mode === 'ordered') {
+    const out = [];
+    for (let i = 0; i < 5; i++) out.push(chars[i % chars.length]);
+    return out;
+  }
+  return Array.from({ length: 5 }, () => chars[Math.floor(Math.random() * chars.length)]);
+}
+
+function buildSession() {
+  const chars = currentWeek === 9 ? getMixChars() : WEEKS[currentWeek].chars;
+  currentRound  = 0;
+  roundSequence = [];
+  for (let r = 0; r < 5; r++) {
+    roundSequence.push(pickFive(chars, r === 0 ? 'ordered' : 'random'));
+  }
+}
+
+/* ─────────────────────────────────────────
+   RENDER
+───────────────────────────────────────── */
+function renderWeekNav() {
+  const nav = document.getElementById('weekNav');
+  nav.innerHTML = '';
+  WEEKS.forEach((w, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'week-btn' + (i === currentWeek ? ' active' : '') + (w.mix ? ' mix' : '');
+    btn.textContent = w.label;
+    btn.title = w.desc;
+    btn.onclick = () => {
+      if (isPlaying) return;
+      currentWeek = i;
+      buildSession();
+      renderWeekNav();
+      renderMain();
+    };
+    nav.appendChild(btn);
+  });
+}
+
+function renderMain() {
+  const el   = document.getElementById('mainContent');
+  el.innerHTML = '';
+  const week  = WEEKS[currentWeek];
+  const chars = currentWeek === 9 ? getMixChars() : week.chars;
+
+  /* ── Mix selector ── */
+  if (week.mix) {
+    const mp = document.createElement('div');
+    mp.className = 'mix-panel';
+    mp.innerHTML = '<h3>Choose weeks to mix</h3>';
+
+    const wr = document.createElement('div');
+    wr.className = 'mix-week-row';
+    WEEKS.slice(0, 9).forEach((w, i) => {
+      const lbl = document.createElement('label');
+      lbl.className = 'mix-check';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = mixWeeks.includes(i);
+      cb.onchange = () => {
+        if (cb.checked) {
+          if (!mixWeeks.includes(i)) mixWeeks.push(i);
+        } else {
+          mixWeeks = mixWeeks.filter(x => x !== i);
+          if (!mixWeeks.length) { mixWeeks = [i]; cb.checked = true; }
+        }
+        buildSession();
+        renderMain();
+      };
+      lbl.appendChild(cb);
+      lbl.appendChild(document.createTextNode(' ' + w.label));
+      wr.appendChild(lbl);
+    });
+    mp.appendChild(wr);
+
+    const pl = document.createElement('div');
+    pl.className = 'mix-sub';
+    pl.textContent = 'Active characters:';
+    mp.appendChild(pl);
+
+    const mc = document.createElement('div');
+    mc.className = 'mix-chars';
+    getMixChars().forEach(c => {
+      const s = document.createElement('span');
+      s.className = 'mix-char';
+      s.textContent = c;
+      mc.appendChild(s);
+    });
+    mp.appendChild(mc);
+    el.appendChild(mp);
+  }
+
+  /* ── Session info ── */
+  const si = document.createElement('div');
+  si.className = 'session-info';
+
+  // Character set card
+  const ic1 = document.createElement('div');
+  ic1.className = 'info-card';
+  ic1.innerHTML = '<h3>' + (week.mix ? 'Mixed set' : 'Week ' + (currentWeek + 1)) + ' — ' + week.desc + '</h3>';
+  const pills = document.createElement('div');
+  pills.className = 'char-pills';
+  chars.slice(0, 24).forEach(c => {
+    const p = document.createElement('span');
+    p.className = 'char-pill';
+    p.textContent = c;
+    pills.appendChild(p);
+  });
+  if (chars.length > 24) {
+    const p = document.createElement('span');
+    p.className = 'char-pill';
+    p.style.color = 'var(--muted)';
+    p.textContent = '+' + (chars.length - 24) + '…';
+    pills.appendChild(p);
+  }
+  ic1.appendChild(pills);
+  si.appendChild(ic1);
+
+  // Progress card
+  const ic2 = document.createElement('div');
+  ic2.className = 'info-card';
+  ic2.style.maxWidth = '200px';
+  const done = Math.min(currentRound, 5);
+  ic2.innerHTML = '<h3>Round progress</h3>' +
+    '<div style="font-size:24px;font-family:var(--font-mono);color:var(--accent);margin-bottom:8px">' +
+    (currentRound >= 5 ? '✓' : (done + 1)) + '/5</div>';
+  const pb = document.createElement('div');
+  pb.className = 'progress-bar';
+  const pf = document.createElement('div');
+  pf.className = 'progress-fill';
+  pf.style.width = Math.min(currentRound / 5 * 100, 100) + '%';
+  pb.appendChild(pf);
+  ic2.appendChild(pb);
+  si.appendChild(ic2);
+  el.appendChild(si);
+
+  /* ── Arena ── */
+  const arena = document.createElement('div');
+  arena.className = 'arena';
+
+  // Round dots
+  const rd = document.createElement('div');
+  rd.className = 'round-indicator';
+  for (let i = 0; i < 5; i++) {
+    const d = document.createElement('div');
+    d.className = 'round-dot' +
+      (i < currentRound ? ' done' : i === currentRound && currentRound < 5 ? ' active' : '');
+    rd.appendChild(d);
+  }
+  arena.appendChild(rd);
+
+  /* ── Session complete ── */
+  if (currentRound >= 5) {
+    const cc = document.createElement('div');
+    cc.className = 'complete-card';
+    cc.innerHTML =
+      '<h2>Session Complete</h2>' +
+      '<p>You finished all 5 rounds for ' + (week.mix ? 'your mixed set' : week.label) + '.</p>' +
+      '<div class="score-big">5/5</div>' +
+      '<p>Great work! Repeat or move to the next week.</p>';
+    const br = document.createElement('div');
+    br.className = 'complete-btn-row';
+
+    const rb = document.createElement('button');
+    rb.className = 'btn primary';
+    rb.textContent = '↺ Repeat session';
+    rb.onclick = () => { buildSession(); renderMain(); };
+
+    const nb = document.createElement('button');
+    nb.className = 'btn';
+    nb.textContent = 'Next week →';
+    if (currentWeek < 9) {
+      nb.onclick = () => { currentWeek++; buildSession(); renderMain(); renderWeekNav(); };
+    } else {
+      nb.disabled = true;
+    }
+    br.appendChild(rb);
+    br.appendChild(nb);
+    cc.appendChild(br);
+    arena.appendChild(cc);
+    el.appendChild(arena);
+    return;
+  }
+
+  /* ── Current round ── */
+  const seqLabel = document.createElement('div');
+  seqLabel.className = 'round-label';
+  seqLabel.textContent = 'Round ' + (currentRound + 1) + ' of 5 — ' + (currentRound === 0 ? 'in order' : 'random');
+  arena.appendChild(seqLabel);
+
+  const round = roundSequence[currentRound] || [];
+
+  // Element grid
+  const grid = document.createElement('div');
+  grid.className = 'element-grid';
+  grid.id = 'elGrid';
+  round.forEach((ch, idx) => {
+    const box = document.createElement('div');
+    box.className = 'el-box';
+    box.id = 'el-' + idx;
+    box.setAttribute('tabindex', '0');
+    box.setAttribute('role', 'button');
+    box.setAttribute('aria-label', 'Play ' + ch);
+    box.onclick = () => playSingle(ch, box);
+    box.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') playSingle(ch, box); };
+    box.innerHTML =
+      '<span class="el-char">' + ch + '</span>' +
+      '<span class="el-morse">' + (MORSE[ch] || '') + '</span>';
+    grid.appendChild(box);
+  });
+  arena.appendChild(grid);
+
+  // Big character display
+  const cd = document.createElement('div');
+  cd.className = 'char-display';
+  cd.id = 'charDisplay';
+  cd.textContent = '·';
+  arena.appendChild(cd);
+
+  // Morse symbol display
+  const md = document.createElement('div');
+  md.className = 'morse-display';
+  md.id = 'morseDisplay';
+  arena.appendChild(md);
+
+  // Status
+  const sm = document.createElement('div');
+  sm.className = 'status-msg';
+  sm.id = 'statusMsg';
+  sm.textContent = 'Press Play to hear this round';
+  arena.appendChild(sm);
+
+  // Action row
+  const ar = document.createElement('div');
+  ar.className = 'action-row';
+  const playR = document.createElement('button');
+  playR.className = 'btn primary';
+  playR.id = 'playRoundBtn';
+  playR.textContent = '▶ Play round ' + (currentRound + 1);
+  playR.onclick = () => playRound(round);
+  ar.appendChild(playR);
+  arena.appendChild(ar);
+
+  const hint = document.createElement('div');
+  hint.className = 'idle-hint';
+  hint.textContent = 'Click any character box to hear it individually';
+  arena.appendChild(hint);
+
+  el.appendChild(arena);
+}
+
+/* ─────────────────────────────────────────
+   PLAYBACK
+───────────────────────────────────────── */
+function showChar(ch) {
+  const cd = document.getElementById('charDisplay');
+  const md = document.getElementById('morseDisplay');
+  if (cd) {
+    cd.textContent = ch;
+    cd.classList.add('flash');
+    setTimeout(() => cd.classList.remove('flash'), 100);
+  }
+  if (md) {
+    const code = MORSE[ch] || '';
+    md.innerHTML = code.split('').map(s =>
+      '<span class="morse-sym">' + s + '</span>'
+    ).join('<span style="color:var(--dim)"> </span>');
+  }
+}
+
+function setActive(box) {
+  document.querySelectorAll('.el-box').forEach(b => b.classList.remove('active'));
+  if (box) box.classList.add('active');
+}
+
+async function playSingle(ch, box) {
+  if (isPlaying) return;
+  isPlaying = true;
+  stopFlag  = false;
+  setActive(box);
+  showChar(ch);
+  await playChar(ch);
+  document.querySelectorAll('.el-box').forEach(b => b.classList.remove('active'));
+  isPlaying = false;
+}
+
+async function playRound(round) {
+  if (isPlaying) return;
+  isPlaying = true;
+  stopFlag  = false;
+
+  document.getElementById('playAllBtn').disabled = true;
+  document.getElementById('stopBtn').disabled    = false;
+  const rb = document.getElementById('playRoundBtn');
+  if (rb) rb.disabled = true;
+
+  const dot = getDotMs();
+
+  for (let i = 0; i < round.length; i++) {
+    if (stopFlag) break;
+    const ch  = round[i];
+    const box = document.getElementById('el-' + i);
+    setActive(box);
+    showChar(ch);
+    await playChar(ch);
+    if (box) { box.classList.remove('active'); box.classList.add('played'); }
+    if (i < round.length - 1) await sleep(dot * 3);
+  }
+
+  isPlaying = false;
+  document.getElementById('stopBtn').disabled    = true;
+  document.getElementById('playAllBtn').disabled = false;
+
+  if (!stopFlag) {
+    const sm = document.getElementById('statusMsg');
+    if (sm) { sm.textContent = 'Round ' + (currentRound + 1) + ' complete!'; sm.className = 'status-msg ok'; }
+    await sleep(1000);
+    currentRound++;
+    renderMain();
+  } else {
+    const sm = document.getElementById('statusMsg');
+    if (sm) { sm.textContent = 'Stopped.'; sm.className = 'status-msg'; }
+    const rb2 = document.getElementById('playRoundBtn');
+    if (rb2) rb2.disabled = false;
+  }
+}
+
+async function playAll() {
+  if (isPlaying) return;
+  buildSession();
+  renderMain();
+  await sleep(300);
+  for (let r = 0; r < 5; r++) {
+    if (stopFlag) break;
+    await playRound(roundSequence[r]);
+    if (!stopFlag && r < 4) await sleep(getDotMs() * 7);
+  }
+}
+
+function stopAll() {
+  stopFlag  = true;
+  isPlaying = false;
+  const sb = document.getElementById('stopBtn');
+  if (sb) sb.disabled = true;
+  const ab = document.getElementById('playAllBtn');
+  if (ab) ab.disabled = false;
+  const sm = document.getElementById('statusMsg');
+  if (sm) { sm.textContent = 'Stopped.'; sm.className = 'status-msg'; }
+}
+
+/* ─────────────────────────────────────────
+   INIT
+───────────────────────────────────────── */
+buildSession();
+renderWeekNav();
+renderMain();
+</script>
+</body>
+</html>
