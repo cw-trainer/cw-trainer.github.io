@@ -747,7 +747,8 @@ function buildSession() {
   currentRound  = 0;
   roundSequence = [];
   for (let r = 0; r < 5; r++) {
-    roundSequence.push(pickFive(chars, r === 0 ? 'ordered' : 'random'));
+    const isMix = currentWeek === 9;
+    roundSequence.push(pickFive(chars, r === 0 && !isMix ? 'ordered' : 'random'));
   }
 }
 
@@ -925,7 +926,8 @@ function renderMain() {
   /* ── Current round ── */
   const seqLabel = document.createElement('div');
   seqLabel.className = 'round-label';
-  seqLabel.textContent = 'Round ' + (currentRound + 1) + ' of 5 — ' + (currentRound === 0 ? 'in order' : 'random');
+  const isMixWeek = currentWeek === 9;
+  seqLabel.textContent = 'Round ' + (currentRound + 1) + ' of 5 — ' + (currentRound === 0 && !isMixWeek ? 'in order' : 'random');
   arena.appendChild(seqLabel);
 
   const round = roundSequence[currentRound] || [];
