@@ -563,6 +563,7 @@
     <div class="logo">CW <span>·</span> TRAINER</div>
     <div class="btn-row">
       <button class="btn" id="playAllBtn" onclick="playAll()">▶ Play session</button>
+      <button class="btn primary" id="playRoundBtn" style="display:none" disabled>▶ Play round 1</button>
       <button class="btn" id="stopBtn" onclick="stopAll()" disabled>■ Stop</button>
     </div>
   </div>
@@ -972,16 +973,14 @@ function renderMain() {
   sm.textContent = 'Press Play to hear this round';
   arena.appendChild(sm);
 
-  // Action row
-  const ar = document.createElement('div');
-  ar.className = 'action-row';
-  const playR = document.createElement('button');
-  playR.className = 'btn primary';
-  playR.id = 'playRoundBtn';
-  playR.textContent = '▶ Play round ' + (currentRound + 1);
-  playR.onclick = () => playRound(round);
-  ar.appendChild(playR);
-  arena.appendChild(ar);
+  // Wire up the header Play Round button
+  const playR = document.getElementById('playRoundBtn');
+  if (playR) {
+    playR.style.display = '';
+    playR.disabled = false;
+    playR.textContent = '▶ Play round ' + (currentRound + 1);
+    playR.onclick = () => playRound(round);
+  }
 
   const hint = document.createElement('div');
   hint.className = 'idle-hint';
