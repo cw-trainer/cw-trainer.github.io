@@ -567,15 +567,15 @@
     <div class="ctrl-group">
       <div class="ctrl-label" data-i18n="speed">Speed (WPM)</div>
       <div class="ctrl-row">
-        <input type="range" id="wpmSlider" min="5" max="35" value="12" step="1" oninput="updateWPM(this.value)">
-        <span class="ctrl-val" id="wpmVal">12 wpm</span>
+        <input type="range" id="wpmSlider" min="5" max="35" value="15" step="1" oninput="updateWPM(this.value)">
+        <span class="ctrl-val" id="wpmVal">15 wpm</span>
       </div>
     </div>
     <div class="ctrl-group">
       <div class="ctrl-label" data-i18n="pitch">Pitch (Hz)</div>
       <div class="ctrl-row">
-        <input type="range" id="pitchSlider" min="300" max="900" value="600" step="10" oninput="updatePitch(this.value)">
-        <span class="ctrl-val" id="pitchVal">600 Hz</span>
+        <input type="range" id="pitchSlider" min="300" max="900" value="800" step="10" oninput="updatePitch(this.value)">
+        <span class="ctrl-val" id="pitchVal">800 Hz</span>
       </div>
     </div>
     <div class="ctrl-group">
@@ -685,6 +685,7 @@ function setLang(l) {
   // Update Play Round label in header
   const prl = document.getElementById('playRoundLabel');
   if (prl) prl.textContent = t('playRound', { r: currentRound + 1 }).replace('▶ ', '');
+  savePrefs();
   // Re-render dynamic content
   renderWeekNav();
   renderMain();
@@ -720,8 +721,8 @@ const WEEKS = [
 /* ─────────────────────────────────────────
    STATE
 ───────────────────────────────────────── */
-let wpm          = 12;
-let pitch        = 600;
+let wpm          = 15;
+let pitch        = 800;
 let vol          = 0.7;
 let currentWeek  = 0;
 let currentRound = 0;
@@ -731,6 +732,58 @@ let stopFlag     = false;
 let audioCtx     = null;
 let mixWeeks     = [0];
 let interval     = 3.0;  // seconds between elements
+
+/* ─────────────────────────────────────────
+   PERSISTENCE (localStorage)
+───────────────────────────────────────── */
+function savePrefs() {
+  try {
+    localStorage.setItem('cw_lang',        lang);
+    localStorage.setItem('cw_wpm',         wpm);
+    localStorage.setItem('cw_pitch',       pitch);
+    localStorage.setItem('cw_vol',         Math.round(vol * 100));
+    localStorage.setItem('cw_interval',    interval);
+    localStorage.setItem('cw_week',        currentWeek);
+    localStorage.setItem('cw_mixWeeks',    JSON.stringify(mixWeeks));
+  } catch(e) {}
+}
+
+function loadPrefs() {
+  try {
+    const l  = localStorage.getItem('cw_lang');
+    const w  = localStorage.getItem('cw_wpm');
+    const p  = localStorage.getItem('cw_pitch');
+    const v  = localStorage.getItem('cw_vol');
+    const iv = localStorage.getItem('cw_interval');
+    const wk = localStorage.getItem('cw_week');
+    const mx = localStorage.getItem('cw_mixWeeks');
+    if (l)  lang        = l;
+    if (w)  wpm         = parseInt(w);
+    if (p)  pitch       = parseInt(p);
+    if (v)  vol         = parseInt(v) / 100;
+    if (iv) interval    = parseFloat(iv);
+    if (wk) currentWeek = parseInt(wk);
+    if (mx) mixWeeks    = JSON.parse(mx);
+  } catch(e) {}
+}
+
+function applySlidersFromState() {
+  const wpmS = document.getElementById('wpmSlider');
+  const wpmV = document.getElementById('wpmVal');
+  if (wpmS) { wpmS.value = wpm; wpmV.textContent = wpm + ' wpm'; }
+
+  const pitchS = document.getElementById('pitchSlider');
+  const pitchV = document.getElementById('pitchVal');
+  if (pitchS) { pitchS.value = pitch; pitchV.textContent = pitch + ' Hz'; }
+
+  const volS = document.getElementById('volSlider');
+  const volV = document.getElementById('volVal');
+  if (volS) { volS.value = Math.round(vol * 100); volV.textContent = Math.round(vol * 100) + '%'; }
+
+  const ivS = document.getElementById('intervalSlider');
+  const ivV = document.getElementById('intervalVal');
+  if (ivS) { ivS.value = interval; ivV.textContent = interval.toFixed(1) + ' s'; }
+}
 let playedLog    = [];   // array of arrays: one per round, filled as session progresses
 
 /* ─────────────────────────────────────────
@@ -779,10 +832,10 @@ async function playChar(ch) {
 /* ─────────────────────────────────────────
    CONTROLS
 ───────────────────────────────────────── */
-function updateWPM(v)      { wpm      = parseInt(v);     document.getElementById('wpmVal').textContent      = v + ' wpm'; }
-function updatePitch(v)    { pitch    = parseInt(v);     document.getElementById('pitchVal').textContent    = v + ' Hz'; }
-function updateVol(v)      { vol      = parseInt(v)/100; document.getElementById('volVal').textContent      = v + '%'; }
-function updateInterval(v) { interval = parseFloat(v);  document.getElementById('intervalVal').textContent = parseFloat(v).toFixed(1) + ' s'; }
+function updateWPM(v)      { wpm      = parseInt(v);     document.getElementById('wpmVal').textContent      = v + ' wpm';                    savePrefs(); }
+function updatePitch(v)    { pitch    = parseInt(v);     document.getElementById('pitchVal').textContent    = v + ' Hz';                     savePrefs(); }
+function updateVol(v)      { vol      = parseInt(v)/100; document.getElementById('volVal').textContent      = Math.round(v) + '%';            savePrefs(); }
+function updateInterval(v) { interval = parseFloat(v);  document.getElementById('intervalVal').textContent = parseFloat(v).toFixed(1) + ' s'; savePrefs(); }
 
 /* ─────────────────────────────────────────
    SESSION LOGIC
@@ -847,6 +900,7 @@ function renderWeekNav() {
     btn.onclick = () => {
       if (isPlaying) return;
       currentWeek = i;
+      savePrefs();
       buildSession();
       renderWeekNav();
       renderMain();
@@ -885,6 +939,7 @@ function renderMain() {
           mixWeeks = mixWeeks.filter(x => x !== i);
           if (!mixWeeks.length) { mixWeeks = [i]; cb.checked = true; }
         }
+        savePrefs();
         buildSession();
         renderMain();
       };
@@ -1009,7 +1064,7 @@ function renderMain() {
     nb.className = 'btn';
     nb.textContent = t('nextWeek');
     if (currentWeek < 9) {
-      nb.onclick = () => { currentWeek++; buildSession(); renderMain(); renderWeekNav(); };
+      nb.onclick = () => { currentWeek++; savePrefs(); buildSession(); renderMain(); renderWeekNav(); };
     } else {
       nb.disabled = true;
     }
@@ -1243,6 +1298,15 @@ function stopAll() {
 /* ─────────────────────────────────────────
    INIT
 ───────────────────────────────────────── */
+loadPrefs();
+applySlidersFromState();
+// Apply saved language to button state and static labels
+document.documentElement.lang = lang;
+document.getElementById('langEN').classList.toggle('active', lang === 'en');
+document.getElementById('langES').classList.toggle('active', lang === 'es');
+document.querySelectorAll('[data-i18n]').forEach(el => {
+  el.textContent = t(el.getAttribute('data-i18n'));
+});
 buildSession();
 renderWeekNav();
 renderMain();
