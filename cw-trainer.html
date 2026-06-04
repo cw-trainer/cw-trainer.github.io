@@ -1035,11 +1035,14 @@ function renderMain() {
         rg.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;justify-content:center';
         entry.chars.forEach(ch => {
           const box = document.createElement('div');
-          box.style.cssText = 'background:var(--surface);border:1px solid var(--accent3);border-radius:8px;width:72px;height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:border-color .2s,background .2s';
+          box.className = 'el-box played';
+          box.setAttribute('tabindex', '0');
+          box.setAttribute('role', 'button');
           box.onclick = () => playSingle(ch, box);
+          box.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') playSingle(ch, box); };
           box.innerHTML =
-            '<span style="font-family:var(--font-mono);font-size:28px;color:var(--accent)">' + ch + '</span>' +
-            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:2px">' + (MORSE[ch] || '') + '</span>';
+            '<span class="el-char" style="color:var(--accent)">' + ch + '</span>' +
+            '<span class="el-morse">' + (MORSE[ch] || '') + '</span>';
           rg.appendChild(box);
         });
         row.appendChild(rg);
@@ -1191,7 +1194,7 @@ async function playRound(round) {
       if (box) box.classList.add('active');
     }
     await playChar(ch);
-    if (box) { box.classList.remove('active'); if (roundIsOrdered) box.classList.add('played'); }
+    if (box) { box.classList.remove('active'); box.classList.add('played'); }
     if (i < round.length - 1) await sleep(interval * 1000);
   }
   if (!stopFlag) playedLog.push({ round: currentRound + 1, chars: roundChars, ordered: roundIsOrdered });
