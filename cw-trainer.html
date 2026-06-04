@@ -585,6 +585,13 @@
         <span class="ctrl-val" id="volVal">70%</span>
       </div>
     </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label" data-i18n="interval">Interval (s)</div>
+      <div class="ctrl-row">
+        <input type="range" id="intervalSlider" min="1" max="10" value="3" step="0.5" oninput="updateInterval(this.value)">
+        <span class="ctrl-val" id="intervalVal">3.0 s</span>
+      </div>
+    </div>
   </div>
 
   <div class="week-nav" id="weekNav"></div>
@@ -620,6 +627,7 @@ const STRINGS = {
     repeatSession:   '↺ Repeat session',
     nextWeek:        'Next week →',
     playRound:       '▶ Play round {r}',
+    interval:        'Interval (s)',
     clickHint:       'Click any character box to hear it individually',
     listenHint:      'Listen carefully — elements are hidden until session ends',
     revealTitle:     'Session results',
@@ -649,6 +657,7 @@ const STRINGS = {
     repeatSession:   '↺ Repetir sesión',
     nextWeek:        'Siguiente semana →',
     playRound:       '▶ Reproducir ronda {r}',
+    interval:        'Intervalo (s)',
     clickHint:       'Haz clic en cualquier carácter para escucharlo',
     listenHint:      'Escucha con atención — los elementos se ocultan hasta que finalice la sesión',
     revealTitle:     'Resultados de la sesión',
@@ -721,6 +730,7 @@ let isPlaying    = false;
 let stopFlag     = false;
 let audioCtx     = null;
 let mixWeeks     = [0];
+let interval     = 3.0;  // seconds between elements
 let playedLog    = [];   // array of arrays: one per round, filled as session progresses
 
 /* ─────────────────────────────────────────
@@ -769,9 +779,10 @@ async function playChar(ch) {
 /* ─────────────────────────────────────────
    CONTROLS
 ───────────────────────────────────────── */
-function updateWPM(v)   { wpm   = parseInt(v);    document.getElementById('wpmVal').textContent   = v + ' wpm'; }
-function updatePitch(v) { pitch = parseInt(v);    document.getElementById('pitchVal').textContent = v + ' Hz'; }
-function updateVol(v)   { vol   = parseInt(v)/100; document.getElementById('volVal').textContent  = v + '%'; }
+function updateWPM(v)      { wpm      = parseInt(v);     document.getElementById('wpmVal').textContent      = v + ' wpm'; }
+function updatePitch(v)    { pitch    = parseInt(v);     document.getElementById('pitchVal').textContent    = v + ' Hz'; }
+function updateVol(v)      { vol      = parseInt(v)/100; document.getElementById('volVal').textContent      = v + '%'; }
+function updateInterval(v) { interval = parseFloat(v);  document.getElementById('intervalVal').textContent = parseFloat(v).toFixed(1) + ' s'; }
 
 /* ─────────────────────────────────────────
    SESSION LOGIC
@@ -1181,7 +1192,7 @@ async function playRound(round) {
     }
     await playChar(ch);
     if (box) { box.classList.remove('active'); if (roundIsOrdered) box.classList.add('played'); }
-    if (i < round.length - 1) await sleep(dot * 3);
+    if (i < round.length - 1) await sleep(interval * 1000);
   }
   if (!stopFlag) playedLog.push({ round: currentRound + 1, chars: roundChars, ordered: roundIsOrdered });
 
@@ -1211,7 +1222,7 @@ async function playAll() {
   for (let r = 0; r < 5; r++) {
     if (stopFlag) break;
     await playRound(roundSequence[r]);
-    if (!stopFlag && r < 4) await sleep(getDotMs() * 7);
+    if (!stopFlag && r < 4) await sleep(interval * 1000);
   }
 }
 
