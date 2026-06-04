@@ -621,6 +621,9 @@ const STRINGS = {
     nextWeek:        'Next week →',
     playRound:       '▶ Play round {r}',
     clickHint:       'Click any character box to hear it individually',
+    listenHint:      'Listen carefully — elements are hidden until session ends',
+    revealTitle:     'Session results',
+    roundN:          'Round {r}',
   },
   es: {
     playSession:     'Reproducir sesión',
@@ -647,6 +650,9 @@ const STRINGS = {
     nextWeek:        'Siguiente semana →',
     playRound:       '▶ Reproducir ronda {r}',
     clickHint:       'Haz clic en cualquier carácter para escucharlo',
+    listenHint:      'Escucha con atención — los elementos se ocultan hasta que finalice la sesión',
+    revealTitle:     'Resultados de la sesión',
+    roundN:          'Ronda {r}',
   }
 };
 
@@ -715,6 +721,7 @@ let isPlaying    = false;
 let stopFlag     = false;
 let audioCtx     = null;
 let mixWeeks     = [0];
+let playedLog    = [];   // array of arrays: one per round, filled as session progresses
 
 /* ─────────────────────────────────────────
    AUDIO
@@ -809,6 +816,7 @@ function buildSession() {
   const isMix  = currentWeek === 9;
   currentRound  = 0;
   roundSequence = [];
+  playedLog     = [];
   for (let r = 0; r < 5; r++) {
     roundSequence.push(pickFive(chars, r === 0 && !isMix ? 'ordered' : 'random'));
   }
@@ -997,6 +1005,38 @@ function renderMain() {
     br.appendChild(rb);
     br.appendChild(nb);
     cc.appendChild(br);
+    // ── Reveal all played elements ──
+    if (playedLog.length) {
+      const rv = document.createElement('div');
+      rv.style.cssText = 'width:100%;max-width:600px;margin-top:4px';
+      const rvh = document.createElement('div');
+      rvh.style.cssText = 'font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-family:var(--font-mono);margin-bottom:12px;text-align:center';
+      rvh.textContent = t('revealTitle');
+      rv.appendChild(rvh);
+      playedLog.forEach(entry => {
+        const row = document.createElement('div');
+        row.style.cssText = 'margin-bottom:14px';
+        const rlbl = document.createElement('div');
+        rlbl.style.cssText = 'font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1.5px;font-family:var(--font-mono);margin-bottom:6px';
+        rlbl.textContent = t('roundN', { r: entry.round }) + (entry.ordered ? ' — ' + t('inOrder') : '');
+        row.appendChild(rlbl);
+        const rg = document.createElement('div');
+        rg.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;justify-content:center';
+        entry.chars.forEach(ch => {
+          const box = document.createElement('div');
+          box.style.cssText = 'background:var(--surface);border:1px solid var(--accent3);border-radius:8px;width:72px;height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:border-color .2s,background .2s';
+          box.onclick = () => playSingle(ch, box);
+          box.innerHTML =
+            '<span style="font-family:var(--font-mono);font-size:28px;color:var(--accent)">' + ch + '</span>' +
+            '<span style="font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:2px">' + (MORSE[ch] || '') + '</span>';
+          rg.appendChild(box);
+        });
+        row.appendChild(rg);
+        rv.appendChild(row);
+      });
+      arena.appendChild(rv);
+    }
+
     arena.appendChild(cc);
     el.appendChild(arena);
     return;
@@ -1015,33 +1055,42 @@ function renderMain() {
   const grid = document.createElement('div');
   grid.className = 'element-grid';
   grid.id = 'elGrid';
+  const isOrderedRound = (currentRound === 0 && !isMix);
   round.forEach((ch, idx) => {
     const box = document.createElement('div');
     box.className = 'el-box';
     box.id = 'el-' + idx;
-    box.setAttribute('tabindex', '0');
+    box.setAttribute('tabindex', isOrderedRound ? '0' : '-1');
     box.setAttribute('role', 'button');
-    box.setAttribute('aria-label', ch);
-    box.onclick = () => playSingle(ch, box);
-    box.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') playSingle(ch, box); };
-    box.innerHTML =
-      '<span class="el-char">' + ch + '</span>' +
-      '<span class="el-morse">' + (MORSE[ch] || '') + '</span>';
+    box.setAttribute('aria-label', isOrderedRound ? ch : '?');
+    if (isOrderedRound) {
+      box.onclick = () => playSingle(ch, box);
+      box.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') playSingle(ch, box); };
+      box.innerHTML =
+        '<span class="el-char">' + ch + '</span>' +
+        '<span class="el-morse">' + (MORSE[ch] || '') + '</span>';
+    } else {
+      box.style.cursor = 'default';
+      box.innerHTML =
+        '<span class="el-char" style="color:var(--dim);font-size:32px">?</span>';
+    }
     grid.appendChild(box);
   });
   arena.appendChild(grid);
 
-  // Big character display
+  // Big character display (hidden for random rounds)
   const cd = document.createElement('div');
   cd.className = 'char-display';
   cd.id = 'charDisplay';
-  cd.textContent = '·';
+  cd.textContent = isOrderedRound ? '·' : '';
+  cd.style.visibility = isOrderedRound ? 'visible' : 'hidden';
   arena.appendChild(cd);
 
-  // Morse symbol display
+  // Morse symbol display (hidden for random rounds)
   const md = document.createElement('div');
   md.className = 'morse-display';
   md.id = 'morseDisplay';
+  md.style.visibility = isOrderedRound ? 'visible' : 'hidden';
   arena.appendChild(md);
 
   // Status
@@ -1063,7 +1112,7 @@ function renderMain() {
 
   const hint = document.createElement('div');
   hint.className = 'idle-hint';
-  hint.textContent = t('clickHint');
+  hint.textContent = isOrderedRound ? t('clickHint') : t('listenHint');
   arena.appendChild(hint);
 
   el.appendChild(arena);
@@ -1116,16 +1165,25 @@ async function playRound(round) {
 
   const dot = getDotMs();
 
+  const roundIsOrdered = (currentRound === 0 && currentWeek !== 9);
+  const roundChars = [];
   for (let i = 0; i < round.length; i++) {
     if (stopFlag) break;
     const ch  = round[i];
+    roundChars.push(ch);
     const box = document.getElementById('el-' + i);
-    setActive(box);
-    showChar(ch);
+    if (roundIsOrdered) {
+      setActive(box);
+      showChar(ch);
+    } else {
+      // pulse the box border only — no char/morse reveal
+      if (box) box.classList.add('active');
+    }
     await playChar(ch);
-    if (box) { box.classList.remove('active'); box.classList.add('played'); }
+    if (box) { box.classList.remove('active'); if (roundIsOrdered) box.classList.add('played'); }
     if (i < round.length - 1) await sleep(dot * 3);
   }
+  if (!stopFlag) playedLog.push({ round: currentRound + 1, chars: roundChars, ordered: roundIsOrdered });
 
   isPlaying = false;
   document.getElementById('stopBtn').disabled    = true;
