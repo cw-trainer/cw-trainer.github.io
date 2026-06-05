@@ -883,14 +883,15 @@ function pickFive(chars, mode) {
   return out;
 }
 
-function buildSession() {
+function buildSession(isRepeat) {
+  isRepeatSession = !!isRepeat;
   const chars  = currentWeek === 9 ? getMixChars() : WEEKS[currentWeek].chars;
   const isMix  = currentWeek === 9;
   currentRound  = 0;
   roundSequence = [];
   playedLog     = [];
   for (let r = 0; r < 5; r++) {
-    roundSequence.push(pickFive(chars, r === 0 && !isMix ? 'ordered' : 'random'));
+    roundSequence.push(pickFive(chars, r === 0 && !isMix && !isRepeat ? 'ordered' : 'random'));
   }
 }
 
@@ -1067,7 +1068,7 @@ function renderMain() {
     const rb = document.createElement('button');
     rb.className = 'btn primary';
     rb.textContent = t('repeatSession');
-    rb.onclick = () => { buildSession(); renderMain(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    rb.onclick = () => { buildSession(true); renderMain(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
     const nb = document.createElement('button');
     nb.className = 'btn';
     nb.textContent = t('nextWeek');
@@ -1123,7 +1124,7 @@ function renderMain() {
   /* ── Current round ── */
   const seqLabel = document.createElement('div');
   seqLabel.className = 'round-label';
-  const modeStr = (currentRound === 0 && !isMix) ? t('inOrder') : t('random');
+  const modeStr = (currentRound === 0 && !isMix && !isRepeatSession) ? t('inOrder') : t('random');
   seqLabel.textContent = t('roundOf', { r: currentRound + 1 }) + ' — ' + modeStr;
   arena.appendChild(seqLabel);
 
@@ -1133,7 +1134,7 @@ function renderMain() {
   const grid = document.createElement('div');
   grid.className = 'element-grid';
   grid.id = 'elGrid';
-  const isOrderedRound = (currentRound === 0 && !isMix);
+  const isOrderedRound = (currentRound === 0 && !isMix && !isRepeatSession);
   round.forEach((ch, idx) => {
     const box = document.createElement('div');
     box.className = 'el-box';
@@ -1243,7 +1244,7 @@ async function playRound(round) {
 
   const dot = getDotMs();
 
-  const roundIsOrdered = (currentRound === 0 && currentWeek !== 9);
+  const roundIsOrdered = (currentRound === 0 && currentWeek !== 9 && !isRepeatSession);
   const roundChars = [];
   for (let i = 0; i < round.length; i++) {
     if (stopFlag) break;
@@ -1284,7 +1285,7 @@ async function playRound(round) {
 
 async function playAll() {
   if (isPlaying) return;
-  buildSession();
+  buildSession(isRepeatSession);
   renderMain();
   await sleep(300);
   for (let r = 0; r < 5; r++) {
