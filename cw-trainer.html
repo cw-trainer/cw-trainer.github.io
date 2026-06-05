@@ -24,6 +24,8 @@
     --dim: #3a4d48;
     --danger: #ff6b6b;
     --warn: #ffb347;
+    --orange: #ff8c42;
+    --orange2: #e6742a;
     --success: #00d4aa;
     --font-mono: 'Share Tech Mono', monospace;
     --font-ui: 'Rajdhani', sans-serif;
@@ -153,6 +155,14 @@
     font-weight: 600;
   }
   .btn.primary:hover { background: var(--accent2); border-color: var(--accent2); }
+  .btn.session {
+    background: var(--orange);
+    color: #0a0e0f;
+    border-color: var(--orange);
+    font-weight: 600;
+  }
+  .btn.session:hover { background: var(--orange2); border-color: var(--orange2); }
+  .btn.session:disabled { opacity: .35; }
   .btn:disabled { opacity: .35; cursor: default; pointer-events: none; }
   .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
@@ -556,7 +566,7 @@
         <button class="lang-btn" id="langES" onclick="setLang('es')">ES</button>
       </div>
       <div class="btn-row">
-        <button class="btn" id="playAllBtn" onclick="playAll()">▶ <span data-i18n="playSession">Play session</span></button>
+        <button class="btn session" id="playAllBtn" onclick="playAll()">▶ <span data-i18n="playSession">Play session</span></button>
         <button class="btn primary" id="playRoundBtn" style="display:none" disabled>▶ <span id="playRoundLabel">Play round 1</span></button>
         <button class="btn" id="stopBtn" onclick="stopAll()" disabled>■ <span data-i18n="stop">Stop</span></button>
       </div>
