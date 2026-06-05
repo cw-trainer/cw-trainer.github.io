@@ -1285,14 +1285,21 @@ async function playRound(round) {
 
 async function playAll() {
   if (isPlaying) return;
+  stopFlag = false;
   buildSession(isRepeatSession);
   renderMain();
   await sleep(300);
   for (let r = 0; r < 5; r++) {
     if (stopFlag) break;
     await playRound(roundSequence[r]);
-    if (!stopFlag && r < 4) await sleep(interval * 1000);
+    if (stopFlag) break;
+    if (r < 4) await sleep(interval * 1000);
   }
+  // Ensure playAllBtn is always re-enabled when playAll finishes
+  const ab = document.getElementById('playAllBtn');
+  if (ab) ab.disabled = false;
+  const sb = document.getElementById('stopBtn');
+  if (sb) sb.disabled = true;
 }
 
 function stopAll() {
