@@ -1059,12 +1059,12 @@ function renderMain() {
     const rb = document.createElement('button');
     rb.className = 'btn primary';
     rb.textContent = t('repeatSession');
-    rb.onclick = () => { buildSession(); renderMain(); };
+    rb.onclick = () => { buildSession(); renderMain(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
     const nb = document.createElement('button');
     nb.className = 'btn';
     nb.textContent = t('nextWeek');
     if (currentWeek < 9) {
-      nb.onclick = () => { currentWeek++; savePrefs(); buildSession(); renderMain(); renderWeekNav(); };
+      nb.onclick = () => { currentWeek++; savePrefs(); buildSession(); renderMain(); renderWeekNav(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
     } else {
       nb.disabled = true;
     }
@@ -1074,6 +1074,7 @@ function renderMain() {
     // ── Reveal all played elements ──
     if (playedLog.length) {
       const rv = document.createElement('div');
+      rv.id = 'sessionReveal';
       rv.style.cssText = 'width:100%;max-width:600px;margin-top:4px';
       const rvh = document.createElement('div');
       rvh.style.cssText = 'font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-family:var(--font-mono);margin-bottom:12px;text-align:center';
@@ -1264,6 +1265,7 @@ async function playRound(round) {
     await sleep(1000);
     currentRound++;
     renderMain();
+    if (currentRound >= 5) { setTimeout(() => { const rv = document.getElementById('sessionReveal'); if (rv) rv.scrollIntoView({ behavior: 'smooth' }); }, 80); }
   } else {
     const sm = document.getElementById('statusMsg');
     if (sm) { sm.textContent = t('stopped'); sm.className = 'status-msg'; }
