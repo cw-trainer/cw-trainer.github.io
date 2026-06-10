@@ -1,0 +1,10 @@
+cw-trainer
+
+Dev:
+  use
+  
+  $ cp cw-trainer.html surge; cd surge; surge; cd ..
+
+  to upload files to cw-trainer.surge.sh site
+
+
