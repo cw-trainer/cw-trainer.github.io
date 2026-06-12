@@ -619,7 +619,7 @@ const STRINGS = {
     pitch:           'Pitch (Hz)',
     volume:          'Volume',
     chooseWeeks:     'Choose weeks to mix',
-    activeChars:     'Active characters:',
+    activeChars:     'Active elements:',
     weekLabel:       'Week',
     mixedSet:        'Mixed set',
     roundProgress:   'Round progress',
@@ -637,7 +637,7 @@ const STRINGS = {
     nextWeek:        'Next week →',
     playRound:       '▶ Play round {r}',
     interval:        'Interval (s)',
-    clickHint:       'Click any character box to hear it individually',
+    clickHint:       'Click any element box to hear it individually',
     listenHint:      'Listen carefully — elements are hidden until session ends',
     revealTitle:     'Session results',
     roundN:          'Round {r}',
@@ -649,7 +649,7 @@ const STRINGS = {
     pitch:           'Tono (Hz)',
     volume:          'Volumen',
     chooseWeeks:     'Elegir semanas para mezclar',
-    activeChars:     'Caracteres activos:',
+    activeChars:     'Elementos activos:',
     weekLabel:       'Semana',
     mixedSet:        'Mezcla',
     roundProgress:   'Progreso de ronda',
@@ -667,7 +667,7 @@ const STRINGS = {
     nextWeek:        'Siguiente semana →',
     playRound:       '▶ Reproducir ronda {r}',
     interval:        'Intervalo (s)',
-    clickHint:       'Haz clic en cualquier carácter para escucharlo',
+    clickHint:       'Haz clic en cualquier elemento para escucharlo',
     listenHint:      'Escucha con atención — los elementos se ocultan hasta que finalice la sesión',
     revealTitle:     'Resultados de la sesión',
     roundN:          'Ronda {r}',
@@ -687,12 +687,10 @@ function setLang(l) {
   document.documentElement.lang = l;
   document.getElementById('langEN').classList.toggle('active', l === 'en');
   document.getElementById('langES').classList.toggle('active', l === 'es');
-  // Update static data-i18n elements
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.getAttribute('data-i18n'));
   });
   savePrefs();
-  // Re-render dynamic content
   renderWeekNav();
   renderMain();
 }
@@ -705,52 +703,161 @@ const MORSE = {
   'K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-',
   'U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..',
   '0':'-----','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.',
-  '/':'-..-.','.':'.-.-.-',',':'--..--','?':'..--..','=':'-...-','+':'.-.-.'
+  '/':'-..-.','.':'.-.-.-',',':'--..--','?':'..--..','=':'-...-','+':'.-.-.',
+  'AR':'.-.-.',  // end of message  (prosign)
+  'SK':'...-.-', // end of contact  (prosign)
+  'BT':'-...-',  // paragraph break (prosign)
+  'KN':'-.--.', // go ahead specific (prosign)
 };
 
 /* ─────────────────────────────────────────
-   WEEK PLAN
+   ELEMENT HELPERS
+───────────────────────────────────────── */
+// Build an element object
+// type: 'char' | 'prosign' | 'word'
+// morse: precomputed display string (dots/dashes, spaces between groups)
+function mkEl(key, label, type, morse) {
+  return { key, label, type, morse };
+}
+
+// Compute morse display string for a word (letter by letter, space-separated)
+function wordMorse(str) {
+  return str.split('').map(c => MORSE[c.toUpperCase()] || '').join('  ');
+}
+
+// Box font size based on label length
+function labelFontSize(len) {
+  if (len === 1) return '28px';
+  if (len <= 3)  return '20px';
+  return '14px';
+}
+
+// Box min-width style
+function boxStyle(len) {
+  return len > 1
+    ? 'width:auto;min-width:72px;padding:0 14px;height:72px'
+    : '';
+}
+
+/* ─────────────────────────────────────────
+   WEEK PLAN  (element objects)
 ───────────────────────────────────────── */
 const WEEKS = [
-  { label:'W1', chars:['E','I','S','H','5'],          desc:'E I S H 5' },
-  { label:'W2', chars:['T','M','O','A','U'],          desc:'T M O A U' },
-  { label:'W3', chars:['V','D','N','B','P'],          desc:'V D N B P' },
-  { label:'W4', chars:['G','Z','C','R'],              desc:'G Z C R' },
-  { label:'W5', chars:['Y','L','F','Q'],              desc:'Y L F Q' },
-  { label:'W6', chars:['X','J','K','R','3'],          desc:'X J K R 3' },
-  { label:'W7', chars:['1','2','3','4','5'],          desc:'1 2 3 4 5' },
-  { label:'W8', chars:['6','7','8','9','0'],          desc:'6 7 8 9 0' },
-  { label:'W9', chars:['/','.',',','?','='],          desc:'/ . , ? =' },
-  { label:'MIX', chars:[], desc:'', mix:true },
+  { label:'W1', elems:[
+      mkEl('E','E','char','.'),
+      mkEl('I','I','char','..'),
+      mkEl('S','S','char','...'),
+      mkEl('H','H','char','....'),
+      mkEl('5','5','char','.....'),
+    ], desc:'E I S H 5' },
+  { label:'W2', elems:[
+      mkEl('T','T','char','-'),
+      mkEl('M','M','char','--'),
+      mkEl('O','O','char','---'),
+      mkEl('A','A','char','.-'),
+      mkEl('U','U','char','..-'),
+    ], desc:'T M O A U' },
+  { label:'W3', elems:[
+      mkEl('V','V','char','...-'),
+      mkEl('D','D','char','-..'),
+      mkEl('N','N','char','-.'),
+      mkEl('B','B','char','-...'),
+      mkEl('P','P','char','.--.'),
+    ], desc:'V D N B P' },
+  { label:'W4', elems:[
+      mkEl('G','G','char','--.'),
+      mkEl('Z','Z','char','--..'),
+      mkEl('C','C','char','-.-.'),
+      mkEl('R','R','char','.-.'),
+      mkEl('L','L','char','.-..'),
+    ], desc:'G Z C R L' },
+  { label:'W5', elems:[
+      mkEl('Y','Y','char','-.--'),
+      mkEl('F','F','char','..-.'),
+      mkEl('Q','Q','char','--.-'),
+      mkEl('J','J','char','.---'),
+      mkEl('X','X','char','-..-'),
+    ], desc:'Y F Q J X' },
+  { label:'W6', elems:[
+      mkEl('W','W','char','.--'),
+      mkEl('K','K','char','-.-'),
+      mkEl('1','1','char','.----'),
+      mkEl('2','2','char','..---'),
+      mkEl('3','3','char','...--'),
+    ], desc:'W K 1 2 3' },
+  { label:'W7', elems:[
+      mkEl('4','4','char','....-'),
+      mkEl('6','6','char','-....'),
+      mkEl('7','7','char','--...'),
+      mkEl('8','8','char','---..'),
+      mkEl('9','9','char','----.'),
+    ], desc:'4 6 7 8 9' },
+  { label:'W8', elems:[
+      mkEl('0','0','char','-----'),
+      mkEl('/','/',  'char','-..-.'),
+      mkEl('.','.',  'char','.-.-.-'),
+      mkEl(',',',',  'char','--..--'),
+      mkEl('?','?',  'char','..--..'),
+    ], desc:'0 / . , ?' },
+  { label:'W9', elems:[
+      mkEl('AR','AR','prosign','.-.-.',),
+      mkEl('SK','SK','prosign','...-.-'),
+      mkEl('BT','BT','prosign','-...-'),
+      mkEl('=','=','prosign','-...-'),
+      mkEl('KN','KN','prosign','-.--.',),
+    ], desc:'AR SK BT KN' },
+  { label:'W10', elems:[
+      mkEl('CQ','CQ',  'word', wordMorse('CQ')),
+      mkEl('DE','DE',  'word', wordMorse('DE')),
+      mkEl('RST','RST','word', wordMorse('RST')),
+      mkEl('QRL?','QRL?','word', wordMorse('QRL?')),
+      mkEl('HW?','HW?','word', wordMorse('HW?')),
+    ], desc:'CQ DE RST QRL? HW?' },
+  { label:'W11', elems:[
+      mkEl('QTH','QTH','word', wordMorse('QTH')),
+      mkEl('QSL','QSL','word', wordMorse('QSL')),
+      mkEl('QRZ','QRZ','word', wordMorse('QRZ')),
+      mkEl('QRP','QRP','word', wordMorse('QRP')),
+      mkEl('QRM','QRM','word', wordMorse('QRM')),
+      mkEl('QRN','QRN','word', wordMorse('QRN')),
+      mkEl('QSB','QSB','word', wordMorse('QSB')),
+    ], desc:'QTH QSL QRZ QRP QRM QRN QSB'},
+  { label:'MIX', elems:[], desc:'', mix:true },
 ];
+
+const MIX_IDX = WEEKS.length - 1;
+
+function weekElems(w) { return w.elems || []; }
 
 /* ─────────────────────────────────────────
    STATE
 ───────────────────────────────────────── */
-let wpm          = 15;
-let pitch        = 800;
-let vol          = 0.7;
-let currentWeek  = 0;
-let currentRound = 0;
+let wpm           = 15;
+let pitch         = 800;
+let vol           = 0.7;
+let currentWeek   = 0;
+let currentRound  = 0;
 let roundSequence = [];
-let isPlaying    = false;
-let stopFlag     = false;
-let audioCtx     = null;
-let mixWeeks     = [0];
-let interval     = 1.5;  // seconds between elements
+let isPlaying     = false;
+let stopFlag      = false;
+let audioCtx      = null;
+let mixWeeks      = [0];
+let interval      = 1.5;
+let isRepeatSession = false;
+let playedLog     = [];
 
 /* ─────────────────────────────────────────
-   PERSISTENCE (localStorage)
+   PERSISTENCE
 ───────────────────────────────────────── */
 function savePrefs() {
   try {
-    localStorage.setItem('cw_lang',        lang);
-    localStorage.setItem('cw_wpm',         wpm);
-    localStorage.setItem('cw_pitch',       pitch);
-    localStorage.setItem('cw_vol',         Math.round(vol * 100));
-    localStorage.setItem('cw_interval',    interval);
-    localStorage.setItem('cw_week',        currentWeek);
-    localStorage.setItem('cw_mixWeeks',    JSON.stringify(mixWeeks));
+    localStorage.setItem('cw_lang',     lang);
+    localStorage.setItem('cw_wpm',      wpm);
+    localStorage.setItem('cw_pitch',    pitch);
+    localStorage.setItem('cw_vol',      Math.round(vol * 100));
+    localStorage.setItem('cw_interval', interval);
+    localStorage.setItem('cw_week',     currentWeek);
+    localStorage.setItem('cw_mixWeeks', JSON.stringify(mixWeeks));
   } catch(e) {}
 }
 
@@ -774,23 +881,17 @@ function loadPrefs() {
 }
 
 function applySlidersFromState() {
-  const wpmS = document.getElementById('wpmSlider');
-  const wpmV = document.getElementById('wpmVal');
-  if (wpmS) { wpmS.value = wpm; wpmV.textContent = wpm + ' wpm'; }
-
-  const pitchS = document.getElementById('pitchSlider');
-  const pitchV = document.getElementById('pitchVal');
-  if (pitchS) { pitchS.value = pitch; pitchV.textContent = pitch + ' Hz'; }
-
-  const volS = document.getElementById('volSlider');
-  const volV = document.getElementById('volVal');
-  if (volS) { volS.value = Math.round(vol * 100); volV.textContent = Math.round(vol * 100) + '%'; }
-
-  const ivS = document.getElementById('intervalSlider');
-  const ivV = document.getElementById('intervalVal');
-  if (ivS) { ivS.value = interval; ivV.textContent = interval.toFixed(1) + ' s'; }
+  const s = (id, val, fmt) => {
+    const el = document.getElementById(id + 'Slider');
+    const vl = document.getElementById(id + 'Val');
+    if (el) el.value = val;
+    if (vl) vl.textContent = fmt;
+  };
+  s('wpm',      wpm,                         wpm + ' wpm');
+  s('pitch',    pitch,                        pitch + ' Hz');
+  s('vol',      Math.round(vol * 100),        Math.round(vol * 100) + '%');
+  s('interval', interval,                     interval.toFixed(1) + ' s');
 }
-let playedLog    = [];   // array of arrays: one per round, filled as session progresses
 
 /* ─────────────────────────────────────────
    AUDIO
@@ -824,8 +925,9 @@ function playTone(ms) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+// Play a single morse character (looks up MORSE table)
 async function playChar(ch) {
-  const code = MORSE[ch.toUpperCase()];
+  const code = MORSE[ch.toUpperCase ? ch.toUpperCase() : ch];
   if (!code) return;
   const dot = getDotMs();
   for (let i = 0; i < code.length; i++) {
@@ -835,45 +937,66 @@ async function playChar(ch) {
   }
 }
 
+// Play an element object according to its type
+async function playElem(elem) {
+  if (stopFlag) return;
+  const dot = getDotMs();
+  if (elem.type === 'char' || elem.type === 'prosign') {
+    // Single MORSE lookup — played as one unit
+    await playChar(elem.key);
+  } else {
+    // 'word' — play letter by letter with letter-spacing
+    for (let i = 0; i < elem.key.length; i++) {
+      if (stopFlag) return;
+      await playChar(elem.key[i]);
+      if (i < elem.key.length - 1) await sleep(dot * 3);
+    }
+  }
+}
+
 /* ─────────────────────────────────────────
    CONTROLS
 ───────────────────────────────────────── */
-function updateWPM(v)      { wpm      = parseInt(v);     document.getElementById('wpmVal').textContent      = v + ' wpm';                    savePrefs(); }
-function updatePitch(v)    { pitch    = parseInt(v);     document.getElementById('pitchVal').textContent    = v + ' Hz';                     savePrefs(); }
-function updateVol(v)      { vol      = parseInt(v)/100; document.getElementById('volVal').textContent      = Math.round(v) + '%';            savePrefs(); }
-function updateInterval(v) { interval = parseFloat(v);  document.getElementById('intervalVal').textContent = parseFloat(v).toFixed(1) + ' s'; savePrefs(); }
+function updateWPM(v)      { wpm      = parseInt(v);    document.getElementById('wpmVal').textContent      = v + ' wpm';                     savePrefs(); }
+function updatePitch(v)    { pitch    = parseInt(v);    document.getElementById('pitchVal').textContent    = v + ' Hz';                      savePrefs(); }
+function updateVol(v)      { vol      = parseInt(v)/100;document.getElementById('volVal').textContent      = Math.round(v) + '%';             savePrefs(); }
+function updateInterval(v) { interval = parseFloat(v); document.getElementById('intervalVal').textContent = parseFloat(v).toFixed(1) + ' s'; savePrefs(); }
 
 /* ─────────────────────────────────────────
    SESSION LOGIC
 ───────────────────────────────────────── */
-function getMixChars() {
+function getMixElems() {
   let all = [];
-  mixWeeks.forEach(w => { all = [...new Set([...all, ...WEEKS[w].chars])]; });
-  return all.length ? all : WEEKS[0].chars;
+  mixWeeks.forEach(w => {
+    weekElems(WEEKS[w]).forEach(e => {
+      if (!all.find(x => x.key === e.key)) all.push(e);
+    });
+  });
+  return all.length ? all : weekElems(WEEKS[0]);
 }
 
-function pickFive(chars, mode) {
-  if (!chars.length) chars = ['E'];
+function pickFive(elems, mode) {
+  if (!elems.length) elems = [mkEl('E','E','char','.')];
   if (mode === 'ordered') {
     const out = [];
-    for (let i = 0; i < 5; i++) out.push(chars[i % chars.length]);
+    for (let i = 0; i < 5; i++) out.push(elems[i % elems.length]);
     return out;
   }
-  // Pool has enough unique chars: pick 5 without replacement
-  if (chars.length >= 5) {
-    const pool = [...chars];
-    const out = [];
+  // Pick 5 unique (without replacement) when pool is large enough
+  if (elems.length >= 5) {
+    const pool = [...elems];
+    const out  = [];
     while (out.length < 5) {
       const idx = Math.floor(Math.random() * pool.length);
       out.push(pool.splice(idx, 1)[0]);
     }
     return out;
   }
-  // Fewer than 5 chars: no two adjacent the same
+  // Fewer than 5: no two adjacent the same
   const out = [];
   let last = null;
   for (let i = 0; i < 5; i++) {
-    const available = chars.filter(c => c !== last);
+    const available = elems.filter(e => e.key !== (last && last.key));
     const pick = available[Math.floor(Math.random() * available.length)];
     out.push(pick);
     last = pick;
@@ -883,18 +1006,68 @@ function pickFive(chars, mode) {
 
 function buildSession(isRepeat) {
   isRepeatSession = !!isRepeat;
-  const chars  = currentWeek === 9 ? getMixChars() : WEEKS[currentWeek].chars;
-  const isMix  = currentWeek === 9;
+  const isMix  = currentWeek === MIX_IDX;
+  const elems  = isMix ? getMixElems() : weekElems(WEEKS[currentWeek]);
   currentRound  = 0;
   roundSequence = [];
   playedLog     = [];
   for (let r = 0; r < 5; r++) {
-    roundSequence.push(pickFive(chars, r === 0 && !isMix && !isRepeat ? 'ordered' : 'random'));
+    roundSequence.push(pickFive(elems, r === 0 && !isMix && !isRepeat ? 'ordered' : 'random'));
   }
 }
 
 /* ─────────────────────────────────────────
-   RENDER
+   RENDER HELPERS
+───────────────────────────────────────── */
+function makeElemBox(elem, revealed, idx) {
+  const box = document.createElement('div');
+  box.className = 'el-box';
+  if (idx !== undefined) box.id = 'el-' + idx;
+
+  const bs = boxStyle(elem.label.length);
+  if (bs) box.style.cssText = bs;
+
+  if (revealed) {
+    box.setAttribute('tabindex', '0');
+    box.setAttribute('role', 'button');
+    box.setAttribute('aria-label', elem.label);
+    box.onclick    = () => playSingle(elem, box);
+    box.onkeydown  = e => { if (e.key === 'Enter' || e.key === ' ') playSingle(elem, box); };
+    box.innerHTML  =
+      '<span class="el-char" style="font-size:' + labelFontSize(elem.label.length) + '">' + elem.label + '</span>' +
+      '<span class="el-morse">' + elem.morse + '</span>';
+  } else {
+    box.style.cursor = 'default';
+    box.setAttribute('tabindex', '-1');
+    box.innerHTML = '<span class="el-char" style="color:var(--dim);font-size:32px">?</span>';
+  }
+  return box;
+}
+
+function showElem(elem) {
+  const cd = document.getElementById('charDisplay');
+  const md = document.getElementById('morseDisplay');
+  if (cd) {
+    cd.style.fontSize = elem.label.length === 1 ? '100px' : elem.label.length <= 3 ? '64px' : '40px';
+    cd.textContent = elem.label;
+    cd.classList.add('flash');
+    setTimeout(() => cd.classList.remove('flash'), 100);
+  }
+  if (md) {
+    md.innerHTML = elem.morse.split('').map(s =>
+      s === ' ' ? '<span style="color:var(--dim)">  </span>' :
+      '<span class="morse-sym">' + s + '</span>'
+    ).join('<span style="color:var(--dim)"> </span>');
+  }
+}
+
+function setActive(box) {
+  document.querySelectorAll('.el-box').forEach(b => b.classList.remove('active'));
+  if (box) box.classList.add('active');
+}
+
+/* ─────────────────────────────────────────
+   RENDER WEEK NAV
 ───────────────────────────────────────── */
 function renderWeekNav() {
   const nav = document.getElementById('weekNav');
@@ -916,12 +1089,15 @@ function renderWeekNav() {
   });
 }
 
+/* ─────────────────────────────────────────
+   RENDER MAIN
+───────────────────────────────────────── */
 function renderMain() {
   const el    = document.getElementById('mainContent');
   el.innerHTML = '';
   const week  = WEEKS[currentWeek];
-  const chars = currentWeek === 9 ? getMixChars() : week.chars;
-  const isMix = currentWeek === 9;
+  const elems = currentWeek === MIX_IDX ? getMixElems() : weekElems(week);
+  const isMix = currentWeek === MIX_IDX;
 
   /* ── Mix selector ── */
   if (isMix) {
@@ -933,7 +1109,7 @@ function renderMain() {
 
     const wr = document.createElement('div');
     wr.className = 'mix-week-row';
-    WEEKS.slice(0, 9).forEach((w, i) => {
+    WEEKS.slice(0, MIX_IDX).forEach((w, i) => {
       const lbl = document.createElement('label');
       lbl.className = 'mix-check';
       const cb = document.createElement('input');
@@ -963,10 +1139,10 @@ function renderMain() {
 
     const mc = document.createElement('div');
     mc.className = 'mix-chars';
-    getMixChars().forEach(c => {
+    getMixElems().forEach(e => {
       const s = document.createElement('span');
       s.className = 'mix-char';
-      s.textContent = c;
+      s.textContent = e.label;
       mc.appendChild(s);
     });
     mp.appendChild(mc);
@@ -977,7 +1153,6 @@ function renderMain() {
   const si = document.createElement('div');
   si.className = 'session-info';
 
-  // Character set card
   const ic1 = document.createElement('div');
   ic1.className = 'info-card';
   const ic1h = document.createElement('h3');
@@ -985,29 +1160,28 @@ function renderMain() {
   ic1.appendChild(ic1h);
   const pills = document.createElement('div');
   pills.className = 'char-pills';
-  chars.slice(0, 24).forEach(c => {
+  elems.slice(0, 24).forEach(e => {
     const p = document.createElement('span');
     p.className = 'char-pill';
-    p.textContent = c;
+    p.textContent = e.label;
     pills.appendChild(p);
   });
-  if (chars.length > 24) {
+  if (elems.length > 24) {
     const p = document.createElement('span');
     p.className = 'char-pill';
     p.style.color = 'var(--muted)';
-    p.textContent = '+' + (chars.length - 24) + '…';
+    p.textContent = '+' + (elems.length - 24) + '…';
     pills.appendChild(p);
   }
   ic1.appendChild(pills);
   si.appendChild(ic1);
-
   el.appendChild(si);
 
   /* ── Arena ── */
   const arena = document.createElement('div');
   arena.className = 'arena';
 
-  // ── Buttons row (rendered fresh, originals in header hidden via CSS) ──
+  /* ── Buttons row ── */
   const ctrlRow = document.createElement('div');
   ctrlRow.className = 'btn-row';
   ctrlRow.style.cssText = 'justify-content:center;flex-wrap:wrap';
@@ -1026,7 +1200,6 @@ function renderMain() {
   arenaBtnRound.disabled = true;
   arenaBtnRound.innerHTML = '&#9654; <span id="playRoundLabel">' + t('playRound', { r: currentRound + 1 }).replace('▶ ', '') + '</span>';
   ctrlRow.appendChild(arenaBtnRound);
-  // keep a direct reference for the wiring block below (getElementById won't work before arena is in DOM)
   const arenaPlayRoundRef = arenaBtnRound;
 
   const arenaBtnStop = document.createElement('button');
@@ -1039,7 +1212,7 @@ function renderMain() {
 
   arena.appendChild(ctrlRow);
 
-  // Round dots — below buttons
+  /* ── Round dots ── */
   const rd = document.createElement('div');
   rd.className = 'round-indicator';
   for (let i = 0; i < 5; i++) {
@@ -1052,43 +1225,9 @@ function renderMain() {
 
   /* ── Session complete ── */
   if (currentRound >= 5) {
-    const prb = document.getElementById('playRoundBtn');
-    if (prb) prb.style.display = 'none';
+    arenaPlayRoundRef.style.display = 'none';
 
-    const cc = document.createElement('div');
-    cc.className = 'complete-card';
-    const ch2 = document.createElement('h2');
-    ch2.textContent = t('sessionComplete');
-    const cp1 = document.createElement('p');
-    cp1.textContent = t('finishedRounds', { w: isMix ? t('yourMixedSet') : week.label });
-    const cscore = document.createElement('div');
-    cscore.className = 'score-big';
-    cscore.textContent = '5/5';
-    const cp2 = document.createElement('p');
-    cp2.textContent = t('greatWork');
-    cc.appendChild(ch2);
-    cc.appendChild(cp1);
-    cc.appendChild(cscore);
-    cc.appendChild(cp2);
-
-    const br = document.createElement('div');
-    br.className = 'complete-btn-row';
-    const rb = document.createElement('button');
-    rb.className = 'btn primary';
-    rb.textContent = t('repeatSession');
-    rb.onclick = () => { buildSession(true); renderMain(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-    const nb = document.createElement('button');
-    nb.className = 'btn';
-    nb.textContent = t('nextWeek');
-    if (currentWeek < 9) {
-      nb.onclick = () => { currentWeek++; savePrefs(); buildSession(); renderMain(); renderWeekNav(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-    } else {
-      nb.disabled = true;
-    }
-    br.appendChild(rb);
-    br.appendChild(nb);
-    cc.appendChild(br);
-    // ── Reveal all played elements ──
+    // Reveal all played elements first
     if (playedLog.length) {
       const rv = document.createElement('div');
       rv.id = 'sessionReveal';
@@ -1106,16 +1245,9 @@ function renderMain() {
         row.appendChild(rlbl);
         const rg = document.createElement('div');
         rg.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;justify-content:center';
-        entry.chars.forEach(ch => {
-          const box = document.createElement('div');
-          box.className = 'el-box played';
-          box.setAttribute('tabindex', '0');
-          box.setAttribute('role', 'button');
-          box.onclick = () => playSingle(ch, box);
-          box.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') playSingle(ch, box); };
-          box.innerHTML =
-            '<span class="el-char" style="color:var(--accent)">' + ch + '</span>' +
-            '<span class="el-morse">' + (MORSE[ch] || '') + '</span>';
+        entry.elems.forEach(elem => {
+          const box = makeElemBox(elem, true);
+          box.classList.add('played');
           rg.appendChild(box);
         });
         row.appendChild(rg);
@@ -1124,15 +1256,46 @@ function renderMain() {
       arena.appendChild(rv);
     }
 
+    // Complete card
+    const cc = document.createElement('div');
+    cc.className = 'complete-card';
+    const ch2 = document.createElement('h2');
+    ch2.textContent = t('sessionComplete');
+    const cp1 = document.createElement('p');
+    cp1.textContent = t('finishedRounds', { w: isMix ? t('yourMixedSet') : week.label });
+    const cscore = document.createElement('div');
+    cscore.className = 'score-big';
+    cscore.textContent = '5/5';
+    const cp2 = document.createElement('p');
+    cp2.textContent = t('greatWork');
+    cc.appendChild(ch2); cc.appendChild(cp1); cc.appendChild(cscore); cc.appendChild(cp2);
+
+    const br = document.createElement('div');
+    br.className = 'complete-btn-row';
+    const rb = document.createElement('button');
+    rb.className = 'btn primary';
+    rb.textContent = t('repeatSession');
+    rb.onclick = () => { buildSession(true); renderMain(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    const nb = document.createElement('button');
+    nb.className = 'btn';
+    nb.textContent = t('nextWeek');
+    if (currentWeek < MIX_IDX) {
+      nb.onclick = () => { currentWeek++; savePrefs(); buildSession(); renderMain(); renderWeekNav(); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    } else {
+      nb.disabled = true;
+    }
+    br.appendChild(rb); br.appendChild(nb); cc.appendChild(br);
     arena.appendChild(cc);
     el.appendChild(arena);
     return;
   }
 
   /* ── Current round ── */
+  const isOrderedRound = (currentRound === 0 && !isMix && !isRepeatSession);
+  const modeStr = isOrderedRound ? t('inOrder') : t('random');
+
   const seqLabel = document.createElement('div');
   seqLabel.className = 'round-label';
-  const modeStr = (currentRound === 0 && !isMix && !isRepeatSession) ? t('inOrder') : t('random');
   seqLabel.textContent = t('roundOf', { r: currentRound + 1 }) + ' — ' + modeStr;
   arena.appendChild(seqLabel);
 
@@ -1142,30 +1305,12 @@ function renderMain() {
   const grid = document.createElement('div');
   grid.className = 'element-grid';
   grid.id = 'elGrid';
-  const isOrderedRound = (currentRound === 0 && !isMix && !isRepeatSession);
-  round.forEach((ch, idx) => {
-    const box = document.createElement('div');
-    box.className = 'el-box';
-    box.id = 'el-' + idx;
-    box.setAttribute('tabindex', isOrderedRound ? '0' : '-1');
-    box.setAttribute('role', 'button');
-    box.setAttribute('aria-label', isOrderedRound ? ch : '?');
-    if (isOrderedRound) {
-      box.onclick = () => playSingle(ch, box);
-      box.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') playSingle(ch, box); };
-      box.innerHTML =
-        '<span class="el-char">' + ch + '</span>' +
-        '<span class="el-morse">' + (MORSE[ch] || '') + '</span>';
-    } else {
-      box.style.cursor = 'default';
-      box.innerHTML =
-        '<span class="el-char" style="color:var(--dim);font-size:32px">?</span>';
-    }
-    grid.appendChild(box);
+  round.forEach((elem, idx) => {
+    grid.appendChild(makeElemBox(elem, isOrderedRound, idx));
   });
   arena.appendChild(grid);
 
-  // Big character display (hidden for random rounds)
+  // Big display
   const cd = document.createElement('div');
   cd.className = 'char-display';
   cd.id = 'charDisplay';
@@ -1173,7 +1318,6 @@ function renderMain() {
   cd.style.visibility = isOrderedRound ? 'visible' : 'hidden';
   arena.appendChild(cd);
 
-  // Morse symbol display (hidden for random rounds)
   const md = document.createElement('div');
   md.className = 'morse-display';
   md.id = 'morseDisplay';
@@ -1187,7 +1331,7 @@ function renderMain() {
   sm.textContent = t('pressPlay');
   arena.appendChild(sm);
 
-  // Wire up the arena Play Round button
+  // Wire up Play Round button
   arenaPlayRoundRef.style.display = '';
   arenaPlayRoundRef.disabled = false;
   arenaPlayRoundRef.innerHTML = '&#9654; <span id="playRoundLabel">' + t('playRound', { r: currentRound + 1 }).replace('▶ ', '') + '</span>';
@@ -1204,34 +1348,13 @@ function renderMain() {
 /* ─────────────────────────────────────────
    PLAYBACK
 ───────────────────────────────────────── */
-function showChar(ch) {
-  const cd = document.getElementById('charDisplay');
-  const md = document.getElementById('morseDisplay');
-  if (cd) {
-    cd.textContent = ch;
-    cd.classList.add('flash');
-    setTimeout(() => cd.classList.remove('flash'), 100);
-  }
-  if (md) {
-    const code = MORSE[ch] || '';
-    md.innerHTML = code.split('').map(s =>
-      '<span class="morse-sym">' + s + '</span>'
-    ).join('<span style="color:var(--dim)"> </span>');
-  }
-}
-
-function setActive(box) {
-  document.querySelectorAll('.el-box').forEach(b => b.classList.remove('active'));
-  if (box) box.classList.add('active');
-}
-
-async function playSingle(ch, box) {
+async function playSingle(elem, box) {
   if (isPlaying) return;
   isPlaying = true;
   stopFlag  = false;
   setActive(box);
-  showChar(ch);
-  await playChar(ch);
+  showElem(elem);
+  await playElem(elem);
   document.querySelectorAll('.el-box').forEach(b => b.classList.remove('active'));
   isPlaying = false;
 }
@@ -1246,27 +1369,25 @@ async function playRound(round) {
   const rb = document.getElementById('playRoundBtn');
   if (rb) rb.disabled = true;
 
-  const dot = getDotMs();
+  const roundIsOrdered = (currentRound === 0 && currentWeek !== MIX_IDX && !isRepeatSession);
+  const roundElems = [];
 
-  const roundIsOrdered = (currentRound === 0 && currentWeek !== 9 && !isRepeatSession);
-  const roundChars = [];
   for (let i = 0; i < round.length; i++) {
     if (stopFlag) break;
-    const ch  = round[i];
-    roundChars.push(ch);
+    const elem = round[i];
+    roundElems.push(elem);
     const box = document.getElementById('el-' + i);
     if (roundIsOrdered) {
       setActive(box);
-      showChar(ch);
+      showElem(elem);
     } else {
-      // pulse the box border only — no char/morse reveal
       if (box) box.classList.add('active');
     }
-    await playChar(ch);
-    if (box) { box.classList.remove('active'); box.classList.add('played'); }
+    await playElem(elem);
+    if (box) { box.classList.remove('active'); if (roundIsOrdered) box.classList.add('played'); }
     if (i < round.length - 1) await sleep(interval * 1000);
   }
-  if (!stopFlag) playedLog.push({ round: currentRound + 1, chars: roundChars, ordered: roundIsOrdered });
+  if (!stopFlag) playedLog.push({ round: currentRound + 1, elems: roundElems, ordered: roundIsOrdered });
 
   isPlaying = false;
   document.getElementById('stopBtn').disabled    = true;
@@ -1299,7 +1420,6 @@ async function playAll() {
     if (stopFlag) break;
     if (r < 4) await sleep(interval * 1000);
   }
-  // Ensure playAllBtn is always re-enabled when playAll finishes
   const ab = document.getElementById('playAllBtn');
   if (ab) ab.disabled = false;
   const sb = document.getElementById('stopBtn');
@@ -1322,7 +1442,6 @@ function stopAll() {
 ───────────────────────────────────────── */
 loadPrefs();
 applySlidersFromState();
-// Apply saved language to button state and static labels
 document.documentElement.lang = lang;
 document.getElementById('langEN').classList.toggle('active', lang === 'en');
 document.getElementById('langES').classList.toggle('active', lang === 'es');
@@ -1332,6 +1451,7 @@ document.querySelectorAll('[data-i18n]').forEach(el => {
 buildSession();
 renderWeekNav();
 renderMain();
+
 </script>
 </body>
 </html>
