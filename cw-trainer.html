@@ -546,6 +546,18 @@
   /* ══════════════════════════════════════
      RESPONSIVE — very small  (≤ 360 px)
   ══════════════════════════════════════ */
+  /* ── Footer ── */
+  .app-footer {
+    padding: 16px 0 12px;
+    border-top: 1px solid var(--border);
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    margin-top: auto;
+  }
+
   @media (max-width: 360px) {
     .el-box { width: calc(19vw - 6px); height: calc(19vw - 6px); }
     .el-char { font-size: 15px; }
@@ -605,6 +617,7 @@
 
   <div class="week-nav" id="weekNav"></div>
   <div id="mainContent"></div>
+  <footer class="app-footer">BUILD 0000</footer>
 </div>
 
 <script>
