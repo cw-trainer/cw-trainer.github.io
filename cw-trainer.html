@@ -192,6 +192,9 @@
   }
   .week-btn.mix { border-color: var(--warn); color: var(--warn); }
   .week-btn.mix.active { background: rgba(255,179,71,.08); }
+  .week-btn.custom { border-color: var(--orange); color: var(--orange); }
+  .week-btn.custom:hover { border-color: var(--orange); color: var(--orange); background: rgba(255,140,66,.1); }
+  .week-btn.custom.active { border-color: var(--orange); color: var(--orange); background: rgba(255,140,66,.12); }
 
   /* ── Session info strip ── */
   .session-info {
@@ -617,7 +620,7 @@
 
   <div class="week-nav" id="weekNav"></div>
   <div id="mainContent"></div>
-  <footer class="app-footer">BUILD 0001</footer>
+  <footer class="app-footer">BUILD 0006</footer>
 </div>
 
 <script>
@@ -632,6 +635,9 @@ const STRINGS = {
     pitch:           'Pitch (Hz)',
     volume:          'Volume',
     chooseWeeks:     'Choose weeks to mix',
+    customLabel:     'Custom {n}',
+    chooseElems:     'Choose elements for Custom {n}',
+    customSet:       'Custom {n}',
     activeChars:     'Active elements:',
     weekLabel:       'Week',
     mixedSet:        'Mixed set',
@@ -662,6 +668,9 @@ const STRINGS = {
     pitch:           'Tono (Hz)',
     volume:          'Volumen',
     chooseWeeks:     'Elegir semanas para mezclar',
+    customLabel:     'Personalizado {n}',
+    chooseElems:     'Elegir elementos para Personalizado {n}',
+    customSet:       'Personalizado {n}',
     activeChars:     'Elementos activos:',
     weekLabel:       'Semana',
     mixedSet:        'Mezcla',
@@ -835,10 +844,14 @@ const WEEKS = [
       mkEl('QRN','QRN','word', wordMorse('QRN')),
       mkEl('QSB','QSB','word', wordMorse('QSB')),
     ], desc:'QTH QSL QRZ QRP QRM QRN QSB'},
+  { label:'C1', elems:[], desc:'', custom:1 },
+  { label:'C2', elems:[], desc:'', custom:2 },
   { label:'MIX', elems:[], desc:'', mix:true },
 ];
 
 const MIX_IDX = WEEKS.length - 1;
+const C1_IDX  = WEEKS.findIndex(w => w.custom === 1);
+const C2_IDX  = WEEKS.findIndex(w => w.custom === 2);
 
 function weekElems(w) { return w.elems || []; }
 
@@ -855,6 +868,7 @@ let isPlaying     = false;
 let stopFlag      = false;
 let audioCtx      = null;
 let mixWeeks      = [0];
+let customElems   = { 1: [], 2: [] };  // keys: elem.key strings per custom slot
 let interval      = 1.5;
 let isRepeatSession = false;
 let playedLog     = [];
@@ -870,7 +884,9 @@ function savePrefs() {
     localStorage.setItem('cw_vol',      Math.round(vol * 100));
     localStorage.setItem('cw_interval', interval);
     localStorage.setItem('cw_week',     currentWeek);
-    localStorage.setItem('cw_mixWeeks', JSON.stringify(mixWeeks));
+    localStorage.setItem('cw_mixWeeks',    JSON.stringify(mixWeeks));
+    localStorage.setItem('cw_custom1',     JSON.stringify(customElems[1]));
+    localStorage.setItem('cw_custom2',     JSON.stringify(customElems[2]));
   } catch(e) {}
 }
 
@@ -882,14 +898,18 @@ function loadPrefs() {
     const v  = localStorage.getItem('cw_vol');
     const iv = localStorage.getItem('cw_interval');
     const wk = localStorage.getItem('cw_week');
-    const mx = localStorage.getItem('cw_mixWeeks');
+    const mx  = localStorage.getItem('cw_mixWeeks');
+    const c1  = localStorage.getItem('cw_custom1');
+    const c2  = localStorage.getItem('cw_custom2');
     if (l)  lang        = l;
     if (w)  wpm         = parseInt(w);
     if (p)  pitch       = parseInt(p);
     if (v)  vol         = parseInt(v) / 100;
     if (iv) interval    = parseFloat(iv);
     if (wk) currentWeek = parseInt(wk);
-    if (mx) mixWeeks    = JSON.parse(mx);
+    if (mx) mixWeeks       = JSON.parse(mx);
+    if (c1) customElems[1] = JSON.parse(c1);
+    if (c2) customElems[2] = JSON.parse(c2);
   } catch(e) {}
 }
 
@@ -978,12 +998,30 @@ function updateInterval(v) { interval = parseFloat(v); document.getElementById('
 /* ─────────────────────────────────────────
    SESSION LOGIC
 ───────────────────────────────────────── */
+function getCustomElems(slot) {
+  const keys = customElems[slot] || [];
+  const all  = [];
+  WEEKS.slice(0, C1_IDX).forEach(w => weekElems(w).forEach(e => {
+    if (keys.includes(e.key) && !all.find(x => x.key === e.key)) all.push(e);
+  }));
+  return all;
+}
+
 function getMixElems() {
   let all = [];
-  mixWeeks.forEach(w => {
-    weekElems(WEEKS[w]).forEach(e => {
-      if (!all.find(x => x.key === e.key)) all.push(e);
-    });
+  mixWeeks.forEach(wi => {
+    const w = WEEKS[wi];
+    if (!w) return;
+    // C1/C2: pull their custom element selection
+    if (w.custom) {
+      getCustomElems(w.custom).forEach(e => {
+        if (!all.find(x => x.key === e.key)) all.push(e);
+      });
+    } else {
+      weekElems(w).forEach(e => {
+        if (!all.find(x => x.key === e.key)) all.push(e);
+      });
+    }
   });
   return all.length ? all : weekElems(WEEKS[0]);
 }
@@ -1019,8 +1057,11 @@ function pickFive(elems, mode) {
 
 function buildSession(isRepeat) {
   isRepeatSession = !!isRepeat;
-  const isMix  = currentWeek === MIX_IDX;
-  const elems  = isMix ? getMixElems() : weekElems(WEEKS[currentWeek]);
+  const isMix    = currentWeek === MIX_IDX;
+  const isCustom = WEEKS[currentWeek] && WEEKS[currentWeek].custom;
+  const elems    = isMix    ? getMixElems()
+                 : isCustom ? getCustomElems(isCustom)
+                 : weekElems(WEEKS[currentWeek]);
   currentRound  = 0;
   roundSequence = [];
   playedLog     = [];
@@ -1087,9 +1128,10 @@ function renderWeekNav() {
   nav.innerHTML = '';
   WEEKS.forEach((w, i) => {
     const btn = document.createElement('button');
-    btn.className = 'week-btn' + (i === currentWeek ? ' active' : '') + (w.mix ? ' mix' : '');
-    btn.textContent = w.mix ? 'MIX' : w.label.replace('W', lang === 'es' ? 'S' : 'W');
-    btn.title = w.mix ? t('chooseWeeks') : (t('weekLabel') + ' ' + (i + 1) + ' — ' + w.desc);
+    const isCustomW = !!w.custom;
+    btn.className = 'week-btn' + (i === currentWeek ? ' active' : '') + (w.mix ? ' mix' : '') + (isCustomW ? ' custom' : '');
+    btn.textContent = w.mix ? 'MIX' : w.custom ? w.label : w.label.replace('W', lang === 'es' ? 'S' : 'W');
+    btn.title = w.mix ? t('chooseWeeks') : w.custom ? t('customLabel', { n: w.custom }) : (t('weekLabel') + ' ' + (i + 1) + ' — ' + w.desc);
     btn.onclick = () => {
       if (isPlaying) return;
       currentWeek = i;
@@ -1109,8 +1151,11 @@ function renderMain() {
   const el    = document.getElementById('mainContent');
   el.innerHTML = '';
   const week  = WEEKS[currentWeek];
-  const elems = currentWeek === MIX_IDX ? getMixElems() : weekElems(week);
-  const isMix = currentWeek === MIX_IDX;
+  const isCustomW = !!(week && week.custom);
+  const isMix     = currentWeek === MIX_IDX;
+  const elems     = isMix    ? getMixElems()
+                  : isCustomW ? getCustomElems(week.custom)
+                  : weekElems(week);
 
   /* ── Mix selector ── */
   if (isMix) {
@@ -1140,7 +1185,8 @@ function renderMain() {
         renderMain();
       };
       lbl.appendChild(cb);
-      lbl.appendChild(document.createTextNode(' ' + w.label.replace('W', lang === 'es' ? 'S' : 'W')));
+      const labelText = w.custom ? t('customLabel', { n: w.custom }) : w.label.replace('W', lang === 'es' ? 'S' : 'W');
+      lbl.appendChild(document.createTextNode(' ' + labelText));
       wr.appendChild(lbl);
     });
     mp.appendChild(wr);
@@ -1162,6 +1208,85 @@ function renderMain() {
     el.appendChild(mp);
   }
 
+  /* ── Custom selector ── */
+  if (isCustomW) {
+    const slot = week.custom;
+    // Pre-select first available element if slot is empty
+    if (!customElems[slot] || !customElems[slot].length) {
+      const firstWeek = WEEKS.slice(0, C1_IDX).find(w => weekElems(w).length);
+      if (firstWeek) {
+        customElems[slot] = [weekElems(firstWeek)[0].key];
+        savePrefs();
+        buildSession();
+      }
+    }
+    const cp = document.createElement('div');
+    cp.className = 'mix-panel';
+
+    const ch3 = document.createElement('h3');
+    ch3.textContent = t('chooseElems', { n: slot });
+    cp.appendChild(ch3);
+
+    // Group elements by week
+    const cgr = document.createElement('div');
+    cgr.style.cssText = 'display:flex;flex-direction:column;gap:10px;margin-bottom:12px';
+    WEEKS.slice(0, C1_IDX).forEach((w, wi) => {
+      const wElems = weekElems(w);
+      if (!wElems.length) return;
+      const wRow = document.createElement('div');
+      wRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;align-items:center';
+      const wLbl = document.createElement('span');
+      wLbl.style.cssText = 'font-size:10px;color:var(--muted);font-family:var(--font-mono);min-width:28px';
+      wLbl.textContent = w.label.replace('W', lang === 'es' ? 'S' : 'W');
+      wRow.appendChild(wLbl);
+      wElems.forEach(e => {
+        const lbl = document.createElement('label');
+        lbl.className = 'mix-check';
+        lbl.style.cssText = 'font-size:12px';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = (customElems[slot] || []).includes(e.key);
+        cb.onchange = () => {
+          if (!customElems[slot]) customElems[slot] = [];
+          if (cb.checked) {
+            if (!customElems[slot].includes(e.key)) customElems[slot].push(e.key);
+          } else {
+            const filtered = customElems[slot].filter(k => k !== e.key);
+            if (!filtered.length) { cb.checked = true; return; } // keep at least one
+            customElems[slot] = filtered;
+          }
+          savePrefs();
+          buildSession();
+          renderMain();
+        };
+        lbl.appendChild(cb);
+        const span = document.createElement('span');
+        span.style.cssText = 'font-family:var(--font-mono)';
+        span.textContent = ' ' + e.label;
+        lbl.appendChild(span);
+        wRow.appendChild(lbl);
+      });
+      cgr.appendChild(wRow);
+    });
+    cp.appendChild(cgr);
+
+    // Active elements preview
+    const cpl = document.createElement('div');
+    cpl.className = 'mix-sub';
+    cpl.textContent = t('activeChars');
+    cp.appendChild(cpl);
+    const cmc = document.createElement('div');
+    cmc.className = 'mix-chars';
+    getCustomElems(slot).forEach(e => {
+      const s = document.createElement('span');
+      s.className = 'mix-char';
+      s.textContent = e.label;
+      cmc.appendChild(s);
+    });
+    cp.appendChild(cmc);
+    el.appendChild(cp);
+  }
+
   /* ── Session info ── */
   const si = document.createElement('div');
   si.className = 'session-info';
@@ -1169,7 +1294,9 @@ function renderMain() {
   const ic1 = document.createElement('div');
   ic1.className = 'info-card';
   const ic1h = document.createElement('h3');
-  ic1h.textContent = (isMix ? t('mixedSet') : t('weekLabel') + ' ' + (currentWeek + 1)) + ' — ' + week.desc;
+  ic1h.textContent = isMix ? t('mixedSet') + ' — ' + week.desc
+                   : isCustomW ? t('customSet', { n: week.custom }) + ' — ' + (getCustomElems(week.custom).map(e=>e.label).join(' ') || '…')
+                   : t('weekLabel') + ' ' + (currentWeek + 1) + ' — ' + week.desc;
   ic1.appendChild(ic1h);
   const pills = document.createElement('div');
   pills.className = 'char-pills';
