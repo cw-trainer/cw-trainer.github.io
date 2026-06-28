@@ -3,8 +3,8 @@ cw-trainer
 Dev:
   use
   
-  $ cp cw-trainer.html surge; cd surge; surge; cd ..
+  $ cp cw-trainer.html surge; surge surge cw-trainer.surge.sh 
 
-  to upload files to cw-trainer.surge.sh site
+  to upload files to cw-trainer.surge.sh site if you know the pass
 
 
