@@ -553,12 +553,22 @@
   .app-footer {
     padding: 16px 0 12px;
     border-top: 1px solid var(--border);
-    text-align: right;
     font-family: var(--font-mono);
     font-size: 11px;
     color: var(--dim);
     letter-spacing: 1px;
     margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .app-footer .footer-credit {
+    font-style: italic;
+    color: var(--border);
+    letter-spacing: 0;
+    font-family: var(--font-ui);
+    font-size: 11px;
   }
 
   @media (max-width: 360px) {
@@ -620,7 +630,7 @@
 
   <div class="week-nav" id="weekNav"></div>
   <div id="mainContent"></div>
-  <footer class="app-footer">BUILD 0006</footer>
+  <footer class="app-footer"><span class="footer-credit" data-i18n="footerCredit">A LW8EJS idea based on LU4DQ CW Course</span><span>BUILD 0011</span></footer>
 </div>
 
 <script>
@@ -660,6 +670,8 @@ const STRINGS = {
     listenHint:      'Listen carefully — elements are hidden until session ends',
     revealTitle:     'Session results',
     roundN:          'Round {r}',
+    replayRound1:    '↺ Round 1',
+    footerCredit:    'A LW8EJS idea based on LU4DQ CW Course',
   },
   es: {
     playSession:     'Reproducir sesión',
@@ -693,6 +705,8 @@ const STRINGS = {
     listenHint:      'Escucha con atención — los elementos se ocultan hasta que finalice la sesión',
     revealTitle:     'Resultados de la sesión',
     roundN:          'Ronda {r}',
+    replayRound1:    '↺ Ronda 1',
+    footerCredit:    'Una idea de LW8EJS basada en el Curso de CW de LU4DQ',
   }
 };
 
@@ -1524,7 +1538,7 @@ async function playRound(round) {
       if (box) box.classList.add('active');
     }
     await playElem(elem);
-    if (box) { box.classList.remove('active'); if (roundIsOrdered) box.classList.add('played'); }
+    if (box) { box.classList.remove('active'); box.classList.add('played'); }
     if (i < round.length - 1) await sleep(interval * 1000);
   }
   if (!stopFlag) playedLog.push({ round: currentRound + 1, elems: roundElems, ordered: roundIsOrdered });
