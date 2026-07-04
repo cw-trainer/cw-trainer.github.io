@@ -635,7 +635,7 @@
 
   <div class="week-nav" id="weekNav"></div>
   <div id="mainContent"></div>
-  <footer class="app-footer"><span class="footer-credit" data-i18n="footerCredit">A LW8EJS idea based on LU4DQ CW Course</span><span>BUILD 0012</span></footer>
+  <footer class="app-footer"><span class="footer-credit" data-i18n="footerCredit">A LW8EJS idea based on LU4DQ CW Course</span><span>BUILD 0014</span></footer>
 </div>
 
 <script>
@@ -846,23 +846,35 @@ const WEEKS = [
       mkEl('BT','BT','prosign','-...-'),
       mkEl('=','=','prosign','-...-'),
       mkEl('KN','KN','prosign','-.--.',),
-    ], desc:'AR SK BT KN' },
+    ], desc:'AR SK BT = KN' },
   { label:'W10', elems:[
+      mkEl('QRL?','QRL?','word', wordMorse('QRL?')),
       mkEl('CQ','CQ',  'word', wordMorse('CQ')),
       mkEl('DE','DE',  'word', wordMorse('DE')),
-      mkEl('RST','RST','word', wordMorse('RST')),
-      mkEl('QRL?','QRL?','word', wordMorse('QRL?')),
+      mkEl('PSE','PSE','word', wordMorse('PSE')),
       mkEl('HW?','HW?','word', wordMorse('HW?')),
-    ], desc:'CQ DE RST QRL? HW?' },
+    ], desc:'QRL? CQ DE PSE HW?' },
   { label:'W11', elems:[
+      mkEl('SU','SU','word', wordMorse('SU')),
+      mkEl('RST','RST','word', wordMorse('RST')),
+      mkEl('5NN','5NN','word', wordMorse('5NN')),
+      mkEl('OP','OP','word', wordMorse('OP')),
       mkEl('QTH','QTH','word', wordMorse('QTH')),
-      mkEl('QSL','QSL','word', wordMorse('QSL')),
+    ], desc:'SU RST 5NN OP QTH' },
+  { label:'W12', elems:[
+      mkEl('QRS','QRS','word', wordMorse('QRS')),
+      mkEl('QRQ','QRQ','word', wordMorse('QRQ')),
       mkEl('QRZ','QRZ','word', wordMorse('QRZ')),
+      mkEl('QSL','QSL','word', wordMorse('QSL')),
+      mkEl('QRX','QRX','word', wordMorse('QRX')),
+    ], desc:'QRS QRQ QRZ QSL QRX'},
+  { label:'W13', elems:[
+      mkEl('QSY','QSY','word', wordMorse('QSY')),
       mkEl('QRP','QRP','word', wordMorse('QRP')),
       mkEl('QRM','QRM','word', wordMorse('QRM')),
       mkEl('QRN','QRN','word', wordMorse('QRN')),
       mkEl('QSB','QSB','word', wordMorse('QSB')),
-    ], desc:'QTH QSL QRZ QRP QRM QRN QSB'},
+    ], desc:'QSY QRP QRM QRN QSB'},
   { label:'C1', elems:[], desc:'', custom:1 },
   { label:'C2', elems:[], desc:'', custom:2 },
   { label:'MIX', elems:[], desc:'', mix:true },
